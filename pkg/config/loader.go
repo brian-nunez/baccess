@@ -1,13 +1,13 @@
 package config
 
 import (
+	"brian-nunez/baccess/pkg/auth"
+	"brian-nunez/baccess/pkg/predicates"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
-
-	"brian-nunez/baccess/pkg/auth"
-	"brian-nunez/baccess/pkg/predicates"
 )
 
 type RolePolicyConfig struct {
@@ -56,6 +56,7 @@ func BuildEvaluator[S auth.RoleBearer, R any](
 	provider PredicateProvider[S, R],
 ) (*auth.Evaluator[S, R], error) {
 	evaluator := auth.NewEvaluator[S, R]()
+	var errs error
 
 	alwaysTrue := func(req auth.AccessRequest[S, R]) bool { return true }
 
@@ -73,7 +74,6 @@ func BuildEvaluator[S auth.RoleBearer, R any](
 				conditionName = "*"
 			}
 
-			// Resolve the condition predicate
 			var conditionPred predicates.Predicate[auth.AccessRequest[S, R]]
 
 			if conditionName == "*" {
@@ -81,10 +81,11 @@ func BuildEvaluator[S auth.RoleBearer, R any](
 			} else {
 				p, err := provider.GetPredicate(conditionName)
 				if err != nil {
-					return nil, fmt.Errorf("unknown predicate '%s' in rule '%s' for role '%s'", conditionName, allowRule, role)
+					errs = errors.Join(errs, fmt.Errorf("role '%s': rule '%s': failed to get predicate '%s': %w", role, allowRule, conditionName, err))
+					conditionPred = auth.Deny[S, R]()
+				} else {
+					conditionPred = p
 				}
-
-				conditionPred = p
 			}
 
 			// Combine: Subject has Role AND Condition is Met
@@ -93,10 +94,21 @@ func BuildEvaluator[S auth.RoleBearer, R any](
 			fullPred := rolePred.And(conditionPred)
 
 			// Register policy
-			// If action is "*", we register it as the wildcard policy
-			evaluator.AddPolicy(action, fullPred)
+			// The key for the policy map should be the full action rule if it contains a condition,
+			// otherwise just the action.
+			// Register policy
+			policyKey := action
+			if allowRule == "*" { // Special case for global wildcard
+				policyKey = "*"
+			} else if len(parts) > 1 { // If a condition was specified in the original rule (e.g., "delete:isOwner", "random:*")
+				policyKey = allowRule // Use the full "action:condition" as the key
+			} else { // If only an action was specified (e.g., "delete", "random")
+				// A simple action should be registered as is. If the user wants a wildcard, they must specify it explicitly.
+				policyKey = action
+			}
+			evaluator.AddPolicy(policyKey, fullPred)
 		}
 	}
 
-	return evaluator, nil
+	return evaluator, errs
 }
