@@ -1,0 +1,21 @@
+{
+  "policies": {
+    "admin": {
+      "allow": [
+        "*"
+      ]
+    },
+    "editor": {
+      "allow": [
+        "read:*",
+        "write:*",
+        "delete:isOwner"
+      ]
+    },
+    "viewer": {
+      "allow": [
+        "read:*"
+      ]
+    }
+  }
+}
