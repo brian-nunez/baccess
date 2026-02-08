@@ -59,10 +59,7 @@ func (r *Registry) GetPredicate(name string) (predicates.Predicate[auth.AccessRe
 }
 
 func main() {
-	rbac := auth.NewRBAC[User, Document](map[string][]string{
-		"admin":  {"editor"},
-		"editor": {"viewer"},
-	})
+	rbac := auth.NewRBAC[User, Document]()
 
 	registry := NewRegistry()
 	registry.Register("isOwner", auth.IsOwner[User, Document]())
