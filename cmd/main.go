@@ -1,9 +1,12 @@
 package main
 
 import (
-	"brian-nunez/baccess/pkg/auth"
-	"brian-nunez/baccess/pkg/predicates"
 	"fmt"
+	"log"
+
+	"brian-nunez/baccess/pkg/auth"
+	"brian-nunez/baccess/pkg/config"
+	"brian-nunez/baccess/pkg/predicates"
 )
 
 type User struct {
@@ -34,49 +37,80 @@ func (d Document) GetOwnerID() any {
 	return d.OwnerID
 }
 
-func IsPublic() predicates.Predicate[auth.AccessRequest[User, Document]] {
-	return func(req auth.AccessRequest[User, Document]) bool {
-		return req.Resource.Public
+type Registry struct {
+	preds map[string]predicates.Predicate[auth.AccessRequest[User, Document]]
+}
+
+func NewRegistry() *Registry {
+	return &Registry{
+		preds: make(map[string]predicates.Predicate[auth.AccessRequest[User, Document]]),
 	}
+}
+
+func (r *Registry) Register(name string, p predicates.Predicate[auth.AccessRequest[User, Document]]) {
+	r.preds[name] = p
+}
+
+func (r *Registry) GetPredicate(name string) (predicates.Predicate[auth.AccessRequest[User, Document]], error) {
+	if p, ok := r.preds[name]; ok {
+		return p, nil
+	}
+	return nil, fmt.Errorf("predicate not found: %s", name)
 }
 
 func main() {
 	rbac := auth.NewRBAC[User, Document](map[string][]string{
-		"admin":     {"editor"},
-		"editor":    {"viewer"},
-		"viewer":    {},
-		"guest":     {},
-		"developer": {"editor"},
+		"admin":  {"editor"},
+		"editor": {"viewer"},
 	})
 
-	evaluator := auth.NewEvaluator[User, Document]()
+	registry := NewRegistry()
+	registry.Register("isOwner", auth.IsOwner[User, Document]())
+	registry.Register("isPublic", func(req auth.AccessRequest[User, Document]) bool {
+		return req.Resource.Public
+	})
 
-	isEditor := rbac.HasRole("editor")
-	isOwner := auth.IsOwner[User, Document]()
-	isPublic := IsPublic()
+	cfg, err := config.LoadConfig("cmd/config.json")
+	if err != nil {
+		log.Fatalf("Error loading config: %v", err)
+	}
 
-	readPolicy := isEditor.Or(isOwner).Or(isPublic)
-	evaluator.AddPolicy("read", readPolicy)
+	evaluator, err := config.BuildEvaluator(cfg, rbac, registry)
+	if err != nil {
+		log.Fatalf("Error building evaluator: %v", err)
+	}
 
-	isAdmin := rbac.HasRole("admin")
-	// highTrust := auth.AttrGreaterThan[User, Document]("trust_score", 80)
-	deletePolicy := isAdmin.Or(isOwner)
-	evaluator.AddPolicy("delete", deletePolicy)
+	admin := User{ID: "admin1", Roles: []string{"admin"}}
+	editor := User{ID: "editor1", Roles: []string{"editor"}}
+	viewer := User{ID: "viewer1", Roles: []string{"viewer"}}
+	other := User{ID: "other1", Roles: []string{"viewer"}}
 
-	adminUser := User{ID: "u1", Roles: []string{"admin"}, Attrs: map[string]any{"trust_score": 90}}
-	guestUser := User{ID: "u2", Roles: []string{"developer"}, Attrs: map[string]any{"trust_score": 50}}
+	doc1 := Document{ID: "doc1", OwnerID: "editor1", Public: false}
 
-	doc := Document{ID: "d1", OwnerID: "u2", Public: false}
+	fmt.Println("--- Testing Policies from Config ---")
 
-	req1 := auth.AccessRequest[User, Document]{Subject: adminUser, Resource: doc, Action: "read"}
-	fmt.Printf("Admin read (via hierarchy): %v\n", evaluator.Evaluate(req1))
+	req1 := auth.AccessRequest[User, Document]{Subject: admin, Resource: doc1, Action: "read"}
+	fmt.Printf("Admin read doc1: %v (Expected: true)\n", evaluator.Evaluate(req1))
 
-	req2 := auth.AccessRequest[User, Document]{Subject: guestUser, Resource: doc, Action: "read"}
-	fmt.Printf("Owner read: %v\n", evaluator.Evaluate(req2))
+	req2 := auth.AccessRequest[User, Document]{Subject: editor, Resource: doc1, Action: "read"}
+	fmt.Printf("Editor read doc1: %v (Expected: true)\n", evaluator.Evaluate(req2))
 
-	req3 := auth.AccessRequest[User, Document]{Subject: guestUser, Resource: doc, Action: "delete"}
-	fmt.Printf("Guest delete: %v\n", evaluator.Evaluate(req3))
+	req3 := auth.AccessRequest[User, Document]{Subject: viewer, Resource: doc1, Action: "read"}
+	fmt.Printf("Viewer read doc1: %v (Expected: true)\n", evaluator.Evaluate(req3))
 
-	req4 := auth.AccessRequest[User, Document]{Subject: adminUser, Resource: doc, Action: "delete"}
-	fmt.Printf("Admin delete: %v\n", evaluator.Evaluate(req4))
+	req4 := auth.AccessRequest[User, Document]{Subject: editor, Resource: doc1, Action: "delete"}
+	fmt.Printf("Editor delete own doc1: %v (Expected: true)\n", evaluator.Evaluate(req4))
+
+	req5 := auth.AccessRequest[User, Document]{Subject: other, Resource: doc1, Action: "delete"}
+	fmt.Printf("Viewer delete doc1: %v (Expected: false)\n", evaluator.Evaluate(req5))
+
+	req6 := auth.AccessRequest[User, Document]{Subject: admin, Resource: doc1, Action: "delete"}
+	fmt.Printf("Admin delete doc1: %v (Expected: true)\n", evaluator.Evaluate(req6))
+
+	req7 := auth.AccessRequest[User, Document]{Subject: admin, Resource: doc1, Action: "nuke"}
+	fmt.Printf("Admin nuke doc1: %v (Expected: true, wildcards apply)\n", evaluator.Evaluate(req7))
+
+	req8 := auth.AccessRequest[User, Document]{Subject: editor, Resource: doc1, Action: "nuke"}
+	fmt.Printf("Editor nuke doc1: %v (Expected: false)\n", evaluator.Evaluate(req8))
+
 }

@@ -13,16 +13,28 @@ func NewEvaluator[S any, R any]() *Evaluator[S, R] {
 }
 
 func (e *Evaluator[S, R]) AddPolicy(action string, p predicates.Predicate[AccessRequest[S, R]]) {
-	e.policies[action] = p
+	if existing, ok := e.policies[action]; ok {
+		e.policies[action] = existing.Or(p)
+	} else {
+		e.policies[action] = p
+	}
 }
 
-// Evaluate checks if the access request is allowed by the registered policies.
-// Returns false if no policy is found for the action (deny by default).
 func (e *Evaluator[S, R]) Evaluate(req AccessRequest[S, R]) bool {
-	p, ok := e.policies[req.Action]
-	if !ok {
-		return false
+	// Check specific policy
+	if p, ok := e.policies[req.Action]; ok {
+		if p.IsSatisfiedBy(req) {
+			return true
+		}
 	}
 
-	return p.IsSatisfiedBy(req)
+	// Check wildcard policy
+	if p, ok := e.policies["*"]; ok {
+		if p.IsSatisfiedBy(req) {
+			return true
+		}
+	}
+
+	return false
 }
+

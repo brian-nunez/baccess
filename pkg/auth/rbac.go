@@ -5,7 +5,6 @@ import (
 	"slices"
 )
 
-// HasRole creates a predicate that checks if the subject has the exact role.
 func HasRole[S RoleBearer, R any](role string) predicates.Predicate[AccessRequest[S, R]] {
 	return func(req AccessRequest[S, R]) bool {
 		roles := req.Subject.GetRoles()
@@ -14,7 +13,6 @@ func HasRole[S RoleBearer, R any](role string) predicates.Predicate[AccessReques
 	}
 }
 
-// HasAnyRole creates a predicate that checks if the subject has any of the specified roles.
 func HasAnyRole[S RoleBearer, R any](targetRoles ...string) predicates.Predicate[AccessRequest[S, R]] {
 	return func(req AccessRequest[S, R]) bool {
 		userRoles := req.Subject.GetRoles()
@@ -76,7 +74,7 @@ func (rbac *RBAC[S, R]) roleMatches(userRole, targetRole string) bool {
 		return true
 	}
 
-	// Check if userRole is a parent of targetRole (i.e., userRole implies targetRole)
+	// Check if userRole is a parent of targetRole (userRole implies targetRole)
 	if children, ok := rbac.Hierarchy[userRole]; ok {
 		for _, child := range children {
 			if rbac.roleMatches(child, targetRole) {
