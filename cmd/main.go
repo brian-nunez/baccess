@@ -6,7 +6,6 @@ import (
 
 	"brian-nunez/baccess/pkg/auth"
 	"brian-nunez/baccess/pkg/config"
-	"brian-nunez/baccess/pkg/predicates"
 )
 
 type User struct {
@@ -34,31 +33,42 @@ type Document struct {
 	Collaborators []string
 }
 
-type Registry struct {
-	preds map[string]predicates.Predicate[auth.AccessRequest[User, Document]]
+func loadConfgFromFile() *config.Config {
+	cfg, _ := config.LoadConfigFromFile("cmd/config.json")
+
+	return cfg
 }
 
-func NewRegistry() *Registry {
-	return &Registry{
-		preds: make(map[string]predicates.Predicate[auth.AccessRequest[User, Document]]),
+func loadConfig() *config.Config {
+	cfgData := map[string]any{
+		"policies": map[string]any{
+			"admin": map[string]any{
+				"allow": []string{"*"},
+			},
+			"editor": map[string]any{
+				"allow": []string{
+					"read:*",
+					"write:*",
+					"delete:isOwner",
+					"edit:isOwner",
+					"edit:isCollaborator",
+				},
+			},
+			"viewer": map[string]any{
+				"allow": []string{"read:*"},
+			},
+		},
 	}
-}
 
-func (r *Registry) Register(name string, p predicates.Predicate[auth.AccessRequest[User, Document]]) {
-	r.preds[name] = p
-}
+	cfg, _ := config.LoadConfigFromMap(cfgData)
 
-func (r *Registry) GetPredicate(name string) (predicates.Predicate[auth.AccessRequest[User, Document]], error) {
-	if p, ok := r.preds[name]; ok {
-		return p, nil
-	}
-	return nil, fmt.Errorf("predicate not found: %s", name)
+	return cfg
 }
 
 func main() {
 	rbac := auth.NewRBAC[User, Document]()
 
-	registry := NewRegistry()
+	registry := auth.NewRegistry[User, Document]()
 
 	registry.Register("isOwner", auth.FieldEquals(
 		func(u User) string { return u.ID },
@@ -75,11 +85,7 @@ func main() {
 		true,
 	))
 
-	cfg, err := config.LoadConfig("cmd/config.json")
-
-	if err != nil {
-		log.Fatalf("Error loading config: %v", err)
-	}
+	cfg := loadConfgFromFile() // or loadConfig()
 
 	evaluator, err := config.BuildEvaluator(cfg, rbac, registry)
 	if err != nil {

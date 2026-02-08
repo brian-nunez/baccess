@@ -18,7 +18,7 @@ type Config struct {
 	Policies map[string]RolePolicyConfig `json:"policies"`
 }
 
-func LoadConfig(path string) (*Config, error) {
+func LoadConfigFromFile(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
@@ -26,6 +26,20 @@ func LoadConfig(path string) (*Config, error) {
 
 	var cfg Config
 	if err := json.Unmarshal(data, &cfg); err != nil {
+		return nil, fmt.Errorf("failed to parse config JSON: %w", err)
+	}
+
+	return &cfg, nil
+}
+
+func LoadConfigFromMap(data map[string]any) (*Config, error) {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal config data: %w", err)
+	}
+
+	var cfg Config
+	if err := json.Unmarshal(jsonData, &cfg); err != nil {
 		return nil, fmt.Errorf("failed to parse config JSON: %w", err)
 	}
 
