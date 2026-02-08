@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"slices"
 
 	"brian-nunez/baccess/pkg/auth"
 	"brian-nunez/baccess/pkg/config"
@@ -28,9 +29,10 @@ func (u User) GetAttribute(key string) any {
 }
 
 type Document struct {
-	ID      string
-	OwnerID string
-	Public  bool
+	ID            string
+	OwnerID       string
+	Public        bool
+	Collaborators []string
 }
 
 func (d Document) GetOwnerID() any {
@@ -63,6 +65,9 @@ func main() {
 
 	registry := NewRegistry()
 	registry.Register("isOwner", auth.IsOwner[User, Document]())
+	registry.Register("isCollaborator", func(req auth.AccessRequest[User, Document]) bool {
+		return slices.Contains(req.Resource.Collaborators, req.Subject.ID)
+	})
 	registry.Register("isPublic", func(req auth.AccessRequest[User, Document]) bool {
 		return req.Resource.Public
 	})
@@ -79,10 +84,16 @@ func main() {
 
 	admin := User{ID: "admin1", Roles: []string{"admin"}}
 	editor := User{ID: "editor1", Roles: []string{"editor"}}
+	editor2 := User{ID: "editor2", Roles: []string{"editor"}}
 	viewer := User{ID: "viewer1", Roles: []string{"viewer"}}
 	other := User{ID: "other1", Roles: []string{"viewer"}}
 
-	doc1 := Document{ID: "doc1", OwnerID: "editor1", Public: false}
+	doc1 := Document{
+		ID:            "doc1",
+		OwnerID:       "editor1",
+		Public:        false,
+		Collaborators: []string{"editor2"},
+	}
 
 	fmt.Println("--- Testing Policies from Config ---")
 
@@ -110,4 +121,12 @@ func main() {
 	req8 := auth.AccessRequest[User, Document]{Subject: editor, Resource: doc1, Action: "nuke"}
 	fmt.Printf("Editor nuke doc1: %v (Expected: false)\n", evaluator.Evaluate(req8))
 
+	req9 := auth.AccessRequest[User, Document]{Subject: editor, Resource: doc1, Action: "edit"}
+	fmt.Printf("Editor1 edit own doc1: %v (Expected: true)\n", evaluator.Evaluate(req9))
+
+	req10 := auth.AccessRequest[User, Document]{Subject: editor2, Resource: doc1, Action: "edit"}
+	fmt.Printf("Editor2 edit shared doc1: %v (Expected: true)\n", evaluator.Evaluate(req10))
+
+	req11 := auth.AccessRequest[User, Document]{Subject: other, Resource: doc1, Action: "edit"}
+	fmt.Printf("Other edit doc1: %v (Expected: false)\n", evaluator.Evaluate(req11))
 }

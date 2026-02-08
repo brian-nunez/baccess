@@ -9,7 +9,9 @@
       "allow": [
         "read:*",
         "write:*",
-        "delete:isOwner"
+        "delete:isOwner",
+        "edit:isOwner",
+        "edit:isCollaborator"
       ]
     },
     "viewer": {
