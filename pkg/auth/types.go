@@ -14,11 +14,6 @@ type Identifiable interface {
 	GetID() any
 }
 
-type Ownable interface {
-	GetOwnerID() any
-}
-
 type Attributable interface {
 	GetAttribute(key string) any
 }
-

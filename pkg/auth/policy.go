@@ -37,4 +37,3 @@ func (e *Evaluator[S, R]) Evaluate(req AccessRequest[S, R]) bool {
 
 	return false
 }
-

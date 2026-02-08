@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"slices"
 
 	"brian-nunez/baccess/pkg/auth"
 	"brian-nunez/baccess/pkg/config"
@@ -35,10 +34,6 @@ type Document struct {
 	Collaborators []string
 }
 
-func (d Document) GetOwnerID() any {
-	return d.OwnerID
-}
-
 type Registry struct {
 	preds map[string]predicates.Predicate[auth.AccessRequest[User, Document]]
 }
@@ -64,15 +59,24 @@ func main() {
 	rbac := auth.NewRBAC[User, Document]()
 
 	registry := NewRegistry()
-	registry.Register("isOwner", auth.IsOwner[User, Document]())
-	registry.Register("isCollaborator", func(req auth.AccessRequest[User, Document]) bool {
-		return slices.Contains(req.Resource.Collaborators, req.Subject.ID)
-	})
-	registry.Register("isPublic", func(req auth.AccessRequest[User, Document]) bool {
-		return req.Resource.Public
-	})
+
+	registry.Register("isOwner", auth.FieldEquals(
+		func(u User) string { return u.ID },
+		func(d Document) string { return d.OwnerID },
+	))
+
+	registry.Register("isCollaborator", auth.SubjectInResourceList(
+		func(u User) string { return u.ID },
+		func(d Document) []string { return d.Collaborators },
+	))
+
+	registry.Register("isPublic", auth.ResourceMatches[User, Document, bool](
+		func(d Document) bool { return d.Public },
+		true,
+	))
 
 	cfg, err := config.LoadConfig("cmd/config.json")
+
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
 	}
