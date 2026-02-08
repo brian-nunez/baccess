@@ -61,12 +61,6 @@ func (e *Evaluator[S, R]) Evaluate(req AccessRequest[S, R]) bool {
 			match = true
 		}
 
-		// Rule 4: Policy "action:condition" matches simple request "action"
-		// This is for cases like req "edit", policy "edit:isOwner"
-		if policyKeyCondition != "" && policyKeyBase == req.Action && strings.Index(req.Action, ":") == -1 {
-			match = true
-		}
-
 		if match {
 			if combinedPredicate == nil {
 				combinedPredicate = p
