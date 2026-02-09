@@ -1,11 +1,11 @@
 package config
 
 import (
-	"brian-nunez/baccess/pkg/auth"
-	"brian-nunez/baccess/pkg/predicates"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/brian-nunez/baccess/pkg/auth"
+	"github.com/brian-nunez/baccess/pkg/predicates"
 	"os"
 	"strings"
 )
@@ -98,13 +98,10 @@ func BuildEvaluator[S auth.RoleBearer, R any](
 			// otherwise just the action.
 			// Register policy
 			policyKey := action
-			if allowRule == "*" { // Special case for global wildcard
+			if allowRule == "*" || (action == "*" && conditionName == "*") {
 				policyKey = "*"
-			} else if len(parts) > 1 { // If a condition was specified in the original rule (e.g., "delete:isOwner", "random:*")
-				policyKey = allowRule // Use the full "action:condition" as the key
-			} else { // If only an action was specified (e.g., "delete", "random")
-				// A simple action should be registered as is. If the user wants a wildcard, they must specify it explicitly.
-				policyKey = action
+			} else if len(parts) > 1 {
+				policyKey = allowRule
 			}
 			evaluator.AddPolicy(policyKey, fullPred)
 		}

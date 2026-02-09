@@ -1,8 +1,8 @@
 package main
 
 import (
-	"brian-nunez/baccess/pkg/auth"
 	"fmt"
+	"github.com/brian-nunez/baccess/pkg/auth"
 )
 
 type User struct {

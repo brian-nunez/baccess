@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"brian-nunez/baccess/pkg/auth"
-	"brian-nunez/baccess/pkg/config"
+	"github.com/brian-nunez/baccess/pkg/auth"
+	"github.com/brian-nunez/baccess/pkg/config"
 )
 
 type User struct {

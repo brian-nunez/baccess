@@ -1,10 +1,10 @@
 package main
 
 import (
-	"brian-nunez/baccess/pkg/auth"
-	"brian-nunez/baccess/pkg/config"
-	"brian-nunez/baccess/pkg/predicates"
 	"fmt"
+	"github.com/brian-nunez/baccess/pkg/auth"
+	"github.com/brian-nunez/baccess/pkg/config"
+	"github.com/brian-nunez/baccess/pkg/predicates"
 	"strings"
 )
 

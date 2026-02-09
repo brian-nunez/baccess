@@ -3,7 +3,7 @@ package auth
 import (
 	"fmt"
 
-	"brian-nunez/baccess/pkg/predicates"
+	"github.com/brian-nunez/baccess/pkg/predicates"
 )
 
 type Registry[S any, R any] struct {

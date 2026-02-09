@@ -8,7 +8,9 @@ func (p Predicate[T]) IsSatisfiedBy(entity T) bool {
 
 func (p Predicate[T]) And(other Predicate[T]) Predicate[T] {
 	return func(entity T) bool {
-		return p(entity) && other(entity)
+		pResult := p(entity)
+		otherResult := other(entity)
+		return pResult && otherResult
 	}
 }
 
@@ -20,6 +22,8 @@ func (p Predicate[T]) Or(other Predicate[T]) Predicate[T] {
 
 func (p Predicate[T]) Not() Predicate[T] {
 	return func(entity T) bool {
-		return !p(entity)
+		pResult := p(entity)
+		finalResult := !pResult
+		return finalResult
 	}
 }

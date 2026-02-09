@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"brian-nunez/baccess/pkg/predicates"
+	"github.com/brian-nunez/baccess/pkg/predicates"
 	"slices"
 )
 

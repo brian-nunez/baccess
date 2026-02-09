@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"brian-nunez/baccess/pkg/predicates"
+	"github.com/brian-nunez/baccess/pkg/predicates"
 	"slices"
 )
 
@@ -14,7 +14,7 @@ func Deny[S any, R any]() predicates.Predicate[AccessRequest[S, R]] {
 }
 
 func Is[S any, R any](p predicates.Predicate[AccessRequest[S, R]]) predicates.Predicate[AccessRequest[S, R]] {
-	return func(req AccessRequest[S, R]) bool { return true }
+	return func(req AccessRequest[S, R]) bool { return p(req) }
 }
 
 func Not[S any, R any](p predicates.Predicate[AccessRequest[S, R]]) predicates.Predicate[AccessRequest[S, R]] {

@@ -1,9 +1,9 @@
 package main
 
 import (
-	"brian-nunez/baccess/pkg/auth"
-	"brian-nunez/baccess/pkg/config"
 	"fmt"
+	"github.com/brian-nunez/baccess/pkg/auth"
+	"github.com/brian-nunez/baccess/pkg/config"
 )
 
 // Simple User and Resource

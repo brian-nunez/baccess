@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"brian-nunez/baccess/pkg/predicates"
+	"github.com/brian-nunez/baccess/pkg/predicates"
 	"strings"
 )
 
@@ -26,18 +26,15 @@ func (e *Evaluator[S, R]) AddPolicy(action string, p predicates.Predicate[Access
 func (e *Evaluator[S, R]) Evaluate(req AccessRequest[S, R]) bool {
 	var combinedPredicate predicates.Predicate[AccessRequest[S, R]]
 
-	// Iterate through all registered policies
+	reqActionBase := req.Action
+	reqActionCondition := ""
+	if colonIndex := strings.Index(req.Action, ":"); colonIndex != -1 {
+		reqActionBase = req.Action[:colonIndex]
+		reqActionCondition = req.Action[colonIndex+1:]
+	}
+
 	for policyKey, p := range e.policies {
 		match := false
-		reqActionBase := req.Action
-		reqActionCondition := ""
-
-		// If req.Action has a colon, split it
-		if colonIndex := strings.Index(reqActionBase, ":"); colonIndex != -1 {
-			reqActionBase = req.Action[:colonIndex]
-			reqActionCondition = req.Action[colonIndex+1:]
-		}
-
 		policyKeyBase := policyKey
 		policyKeyCondition := ""
 		if colonIndex := strings.Index(policyKey, ":"); colonIndex != -1 {
@@ -45,23 +42,18 @@ func (e *Evaluator[S, R]) Evaluate(req AccessRequest[S, R]) bool {
 			policyKeyCondition = policyKey[colonIndex+1:]
 		}
 
-		// Rule 1: Exact match (e.g., req "edit", policy "edit" OR req "edit:something", policy "edit:something")
-		if policyKey == req.Action {
-			match = true
-		}
-
-		// Rule 2: Global wildcard (e.g., policy "*")
+		// Rule 1: Global wildcard policy (e.g., policy "*")
 		if policyKey == "*" {
 			match = true
-		}
-
-		// Rule 3: Action prefix wildcard (e.g., policy "action:*")
-		// Matches if policy is "action:*" and request is "action:something"
-		if policyKeyCondition == "*" && policyKeyBase == reqActionBase && reqActionCondition != "" {
+		} else if policyKey == req.Action { // Rule 2: Exact match (e.g., "read" == "read", "delete:isOwner" == "delete:isOwner")
 			match = true
-		}
-
-		if policyKeyCondition != "" && policyKeyBase == req.Action && strings.Index(req.Action, ":") == -1 {
+		} else if policyKeyCondition == "*" && policyKeyBase == reqActionBase {
+			// Rule 3: Policy with action-level wildcard matches request with same base action
+			// (e.g., "update:*" matches "update:title" or "update")
+			match = true
+		} else if policyKeyCondition == "" && policyKeyBase == reqActionBase && reqActionCondition != "" {
+			// Rule 4: Policy for a base action matches request for the same base action with a condition
+			// (e.g., policy "read" matches request "read:something")
 			match = true
 		}
 
