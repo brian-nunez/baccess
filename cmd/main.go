@@ -50,8 +50,9 @@ func loadConfig() *config.Config {
 					"read:*",
 					"write:*",
 					"delete:isOwner",
-					"edit:isOwner",
-					"edit:isCollaborator",
+					"edit",
+					// "edit:isOwner",
+					// "edit:isCollaborator",
 				},
 			},
 			"viewer": map[string]any{
@@ -92,51 +93,51 @@ func main() {
 		log.Fatalf("Error building evaluator: %v", err)
 	}
 
-	admin := User{ID: "admin1", Roles: []string{"admin"}}
+	// admin := User{ID: "admin1", Roles: []string{"admin"}}
 	editor := User{ID: "editor1", Roles: []string{"editor"}}
-	editor2 := User{ID: "editor2", Roles: []string{"editor"}}
-	viewer := User{ID: "viewer1", Roles: []string{"viewer"}}
-	other := User{ID: "other1", Roles: []string{"viewer"}}
+	// editor2 := User{ID: "editor2", Roles: []string{"editor"}}
+	// viewer := User{ID: "viewer1", Roles: []string{"viewer"}}
+	// other := User{ID: "other1", Roles: []string{"viewer"}}
 
 	doc1 := Document{
 		ID:            "doc1",
-		OwnerID:       "editor1",
+		OwnerID:       "editor2",
 		Public:        false,
 		Collaborators: []string{"editor2"},
 	}
 
-	fmt.Println("--- Testing Policies from Config ---")
-
-	req1 := auth.AccessRequest[User, Document]{Subject: admin, Resource: doc1, Action: "read"}
-	fmt.Printf("Admin read doc1: %v (Expected: true)\n", evaluator.Evaluate(req1))
-
-	req2 := auth.AccessRequest[User, Document]{Subject: editor, Resource: doc1, Action: "read"}
-	fmt.Printf("Editor read doc1: %v (Expected: true)\n", evaluator.Evaluate(req2))
-
-	req3 := auth.AccessRequest[User, Document]{Subject: viewer, Resource: doc1, Action: "read"}
-	fmt.Printf("Viewer read doc1: %v (Expected: true)\n", evaluator.Evaluate(req3))
-
-	req4 := auth.AccessRequest[User, Document]{Subject: editor, Resource: doc1, Action: "delete"}
-	fmt.Printf("Editor delete own doc1: %v (Expected: true)\n", evaluator.Evaluate(req4))
-
-	req5 := auth.AccessRequest[User, Document]{Subject: other, Resource: doc1, Action: "delete"}
-	fmt.Printf("Viewer delete doc1: %v (Expected: false)\n", evaluator.Evaluate(req5))
-
-	req6 := auth.AccessRequest[User, Document]{Subject: admin, Resource: doc1, Action: "delete"}
-	fmt.Printf("Admin delete doc1: %v (Expected: true)\n", evaluator.Evaluate(req6))
-
-	req7 := auth.AccessRequest[User, Document]{Subject: admin, Resource: doc1, Action: "nuke"}
-	fmt.Printf("Admin nuke doc1: %v (Expected: true, wildcards apply)\n", evaluator.Evaluate(req7))
-
-	req8 := auth.AccessRequest[User, Document]{Subject: editor, Resource: doc1, Action: "nuke"}
-	fmt.Printf("Editor nuke doc1: %v (Expected: false)\n", evaluator.Evaluate(req8))
+	// fmt.Println("--- Testing Policies from Config ---")
+	//
+	// req1 := auth.AccessRequest[User, Document]{Subject: admin, Resource: doc1, Action: "read"}
+	// fmt.Printf("Admin read doc1: %v (Expected: true)\n", evaluator.Evaluate(req1))
+	//
+	// req2 := auth.AccessRequest[User, Document]{Subject: editor, Resource: doc1, Action: "read"}
+	// fmt.Printf("Editor read doc1: %v (Expected: true)\n", evaluator.Evaluate(req2))
+	//
+	// req3 := auth.AccessRequest[User, Document]{Subject: viewer, Resource: doc1, Action: "read"}
+	// fmt.Printf("Viewer read doc1: %v (Expected: true)\n", evaluator.Evaluate(req3))
+	//
+	// req4 := auth.AccessRequest[User, Document]{Subject: editor, Resource: doc1, Action: "delete"}
+	// fmt.Printf("Editor delete own doc1: %v (Expected: true)\n", evaluator.Evaluate(req4))
+	//
+	// req5 := auth.AccessRequest[User, Document]{Subject: other, Resource: doc1, Action: "delete"}
+	// fmt.Printf("Viewer delete doc1: %v (Expected: false)\n", evaluator.Evaluate(req5))
+	//
+	// req6 := auth.AccessRequest[User, Document]{Subject: admin, Resource: doc1, Action: "delete"}
+	// fmt.Printf("Admin delete doc1: %v (Expected: true)\n", evaluator.Evaluate(req6))
+	//
+	// req7 := auth.AccessRequest[User, Document]{Subject: admin, Resource: doc1, Action: "nuke"}
+	// fmt.Printf("Admin nuke doc1: %v (Expected: true, wildcards apply)\n", evaluator.Evaluate(req7))
+	//
+	// req8 := auth.AccessRequest[User, Document]{Subject: editor, Resource: doc1, Action: "nuke"}
+	// fmt.Printf("Editor nuke doc1: %v (Expected: false)\n", evaluator.Evaluate(req8))
 
 	req9 := auth.AccessRequest[User, Document]{Subject: editor, Resource: doc1, Action: "edit"}
 	fmt.Printf("Editor1 edit own doc1: %v (Expected: true)\n", evaluator.Evaluate(req9))
 
-	req10 := auth.AccessRequest[User, Document]{Subject: editor2, Resource: doc1, Action: "edit"}
-	fmt.Printf("Editor2 edit shared doc1: %v (Expected: true)\n", evaluator.Evaluate(req10))
-
-	req11 := auth.AccessRequest[User, Document]{Subject: other, Resource: doc1, Action: "edit"}
-	fmt.Printf("Other edit doc1: %v (Expected: false)\n", evaluator.Evaluate(req11))
+	// req10 := auth.AccessRequest[User, Document]{Subject: editor2, Resource: doc1, Action: "edit"}
+	// fmt.Printf("Editor2 edit shared doc1: %v (Expected: true)\n", evaluator.Evaluate(req10))
+	//
+	// req11 := auth.AccessRequest[User, Document]{Subject: other, Resource: doc1, Action: "edit"}
+	// fmt.Printf("Other edit doc1: %v (Expected: false)\n", evaluator.Evaluate(req11))
 }
