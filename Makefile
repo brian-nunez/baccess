@@ -20,3 +20,8 @@ clean:
 	rm -f coverage.out coverage.html
 	go clean -testcache
 	@echo "Cleanup complete."
+
+perf:
+	@echo "Running performance tests..."
+	go test -bench=. ./pkg/auth/perf -benchmem -benchtime=100000000x
+	@echo "Performance tests completed."
