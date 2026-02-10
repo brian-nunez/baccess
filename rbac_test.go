@@ -1,10 +1,10 @@
-package auth_test
+package baccess_test
 
 import (
 	"testing"
 
-	"github.com/brian-nunez/baccess/pkg/auth"
-	auth_test_utils "github.com/brian-nunez/baccess/pkg/auth/test"
+	baccess "github.com/brian-nunez/baccess/v1"
+	auth_test_utils "github.com/brian-nunez/baccess/v1/test"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -54,12 +54,12 @@ func TestHasRole(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			req := auth.AccessRequest[auth_test_utils.MockRoleBearer, auth_test_utils.MockResource]{
+			req := baccess.AccessRequest[auth_test_utils.MockRoleBearer, auth_test_utils.MockResource]{
 				Subject:  tc.subject,
 				Resource: resource,
 				Action:   "read", // Action doesn't matter for HasRole
 			}
-			predicate := auth.HasRole[auth_test_utils.MockRoleBearer, auth_test_utils.MockResource](tc.role)
+			predicate := baccess.HasRole[auth_test_utils.MockRoleBearer, auth_test_utils.MockResource](tc.role)
 			assert.Equal(t, tc.expected, predicate.IsSatisfiedBy(req))
 		})
 	}
@@ -124,23 +124,23 @@ func TestHasAnyRole(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			req := auth.AccessRequest[auth_test_utils.MockRoleBearer, auth_test_utils.MockResource]{
+			req := baccess.AccessRequest[auth_test_utils.MockRoleBearer, auth_test_utils.MockResource]{
 				Subject:  tc.subject,
 				Resource: resource,
 				Action:   "write", // Action doesn't matter for HasAnyRole
 			}
-			predicate := auth.HasAnyRole[auth_test_utils.MockRoleBearer, auth_test_utils.MockResource](tc.targetRoles...)
+			predicate := baccess.HasAnyRole[auth_test_utils.MockRoleBearer, auth_test_utils.MockResource](tc.targetRoles...)
 			assert.Equal(t, tc.expected, predicate.IsSatisfiedBy(req))
 		})
 	}
 }
 
 func TestRBAC_HasRole(t *testing.T) {
-	rbac := auth.NewRBAC[auth_test_utils.MockRoleBearer, auth_test_utils.MockResource]()
+	rbac := baccess.NewRBAC[auth_test_utils.MockRoleBearer, auth_test_utils.MockResource]()
 	adminUser := auth_test_utils.MockRoleBearer{Roles: []string{"admin", "user"}}
 	resource := auth_test_utils.MockResource{ID: "doc1"} // Use MockResource from test_utils.go
 
-	req := auth.AccessRequest[auth_test_utils.MockRoleBearer, auth_test_utils.MockResource]{
+	req := baccess.AccessRequest[auth_test_utils.MockRoleBearer, auth_test_utils.MockResource]{
 		Subject:  adminUser,
 		Resource: resource,
 		Action:   "read",
@@ -154,11 +154,11 @@ func TestRBAC_HasRole(t *testing.T) {
 }
 
 func TestRBAC_HasAnyRole(t *testing.T) {
-	rbac := auth.NewRBAC[auth_test_utils.MockRoleBearer, auth_test_utils.MockResource]()
+	rbac := baccess.NewRBAC[auth_test_utils.MockRoleBearer, auth_test_utils.MockResource]()
 	editorUser := auth_test_utils.MockRoleBearer{Roles: []string{"editor", "user"}}
 	resource := auth_test_utils.MockResource{ID: "doc1"} // Use MockResource from test_utils.go
 
-	req := auth.AccessRequest[auth_test_utils.MockRoleBearer, auth_test_utils.MockResource]{
+	req := baccess.AccessRequest[auth_test_utils.MockRoleBearer, auth_test_utils.MockResource]{
 		Subject:  editorUser,
 		Resource: resource,
 		Action:   "edit",

@@ -2,8 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/brian-nunez/baccess/pkg/auth"
-	"github.com/brian-nunez/baccess/pkg/config"
+	baccess "github.com/brian-nunez/baccess/v1"
 )
 
 type User struct {
@@ -25,18 +24,18 @@ func main() {
 			},
 		},
 	}
-	cfg, _ := config.LoadConfigFromMap(cfgData)
+	cfg, _ := baccess.LoadConfigFromMap(cfgData)
 
-	rbac := auth.NewRBAC[User, System]()
-	registry := auth.NewRegistry[User, System]()
+	rbac := baccess.NewRBAC[User, System]()
+	registry := baccess.NewRegistry[User, System]()
 
-	evaluator, _ := config.BuildEvaluator(cfg, rbac, registry)
+	evaluator, _ := baccess.BuildEvaluator(cfg, rbac, registry)
 
 	super := User{Roles: []string{"superuser"}}
 	auditor := User{Roles: []string{"auditor"}}
 	sys := System{}
 
-	fmt.Printf("Superuser nuke: %v\n", evaluator.Evaluate(auth.AccessRequest[User, System]{Subject: super, Resource: sys, Action: "nuke"}))
-	fmt.Printf("Auditor nuke:   %v\n", evaluator.Evaluate(auth.AccessRequest[User, System]{Subject: auditor, Resource: sys, Action: "nuke"}))
-	fmt.Printf("Auditor read:   %v\n", evaluator.Evaluate(auth.AccessRequest[User, System]{Subject: auditor, Resource: sys, Action: "read"}))
+	fmt.Printf("Superuser nuke: %v\n", evaluator.Evaluate(baccess.AccessRequest[User, System]{Subject: super, Resource: sys, Action: "nuke"}))
+	fmt.Printf("Auditor nuke:   %v\n", evaluator.Evaluate(baccess.AccessRequest[User, System]{Subject: auditor, Resource: sys, Action: "nuke"}))
+	fmt.Printf("Auditor read:   %v\n", evaluator.Evaluate(baccess.AccessRequest[User, System]{Subject: auditor, Resource: sys, Action: "read"}))
 }

@@ -1,30 +1,25 @@
-package config_test
+package baccess_test
 
 import (
 	"errors"
 	"os"
 	"testing"
 
-	"github.com/brian-nunez/baccess/pkg/auth"
-	auth_test_utils "github.com/brian-nunez/baccess/pkg/auth/test"
-	"github.com/brian-nunez/baccess/pkg/config"
-	"github.com/brian-nunez/baccess/pkg/predicates"
+	baccess "github.com/brian-nunez/baccess/v1"
+	auth_test_utils "github.com/brian-nunez/baccess/v1/test"
 	"github.com/stretchr/testify/assert"
 )
 
 type MockPredicateProvider struct {
-	Predicates map[string]predicates.Predicate[auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]]
+	Predicates map[string]baccess.Predicate[baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]]
 }
 
-func (m *MockPredicateProvider) GetPredicate(name string) (predicates.Predicate[auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]], error) {
+func (m *MockPredicateProvider) GetPredicate(name string) (baccess.Predicate[baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]], error) {
 	if p, ok := m.Predicates[name]; ok {
 		return p, nil
 	}
 	return nil, errors.New("predicate not found")
 }
-
-func alwaysTrue[S any, R any](req auth.AccessRequest[S, R]) bool  { return true }
-func alwaysFalse[S any, R any](req auth.AccessRequest[S, R]) bool { return false }
 
 func TestLoadConfigFromFile(t *testing.T) {
 	// Valid config file
@@ -34,7 +29,7 @@ func TestLoadConfigFromFile(t *testing.T) {
 	tempFile.WriteString(`{"policies":{"admin":{"allow":["*"]},"editor":{"allow":["read","delete:isOwner"]}}}`)
 	tempFile.Close()
 
-	cfg, err := config.LoadConfigFromFile(tempFile.Name())
+	cfg, err := baccess.LoadConfigFromFile(tempFile.Name())
 	assert.NoError(t, err)
 	assert.NotNil(t, cfg)
 	assert.Len(t, cfg.Policies, 2)
@@ -42,7 +37,7 @@ func TestLoadConfigFromFile(t *testing.T) {
 	assert.Contains(t, cfg.Policies, "editor")
 	assert.Equal(t, []string{"*"}, cfg.Policies["admin"].Allow)
 
-	cfg, err = config.LoadConfigFromFile("non_existent_file.json")
+	cfg, err = baccess.LoadConfigFromFile("non_existent_file.json")
 	assert.Error(t, err)
 	assert.Nil(t, cfg)
 	assert.Contains(t, err.Error(), "failed to read config file")
@@ -54,7 +49,7 @@ func TestLoadConfigFromFile(t *testing.T) {
 	invalidJsonFile.WriteString(`{"policies": "invalid"}`)
 	invalidJsonFile.Close()
 
-	cfg, err = config.LoadConfigFromFile(invalidJsonFile.Name())
+	cfg, err = baccess.LoadConfigFromFile(invalidJsonFile.Name())
 	assert.Error(t, err)
 	assert.Nil(t, cfg)
 	assert.Contains(t, err.Error(), "failed to parse config JSON")
@@ -69,7 +64,7 @@ func TestLoadConfigFromMap(t *testing.T) {
 			},
 		},
 	}
-	cfg, err := config.LoadConfigFromMap(validMap)
+	cfg, err := baccess.LoadConfigFromMap(validMap)
 	assert.NoError(t, err)
 	assert.NotNil(t, cfg)
 	assert.Len(t, cfg.Policies, 1)
@@ -82,7 +77,7 @@ func TestLoadConfigFromMap(t *testing.T) {
 			},
 		},
 	}
-	cfg, err = config.LoadConfigFromMap(invalidMap)
+	cfg, err = baccess.LoadConfigFromMap(invalidMap)
 	assert.Error(t, err)
 	assert.Nil(t, cfg)
 	assert.Contains(t, err.Error(), "failed to parse config JSON")
@@ -95,7 +90,7 @@ func TestLoadConfigFromMap(t *testing.T) {
 			},
 		},
 	}
-	cfg, err = config.LoadConfigFromMap(unmarshableMap)
+	cfg, err = baccess.LoadConfigFromMap(unmarshableMap)
 	assert.Error(t, err)
 	assert.Nil(t, cfg)
 	assert.Contains(t, err.Error(), "failed to marshal config data")
@@ -103,30 +98,30 @@ func TestLoadConfigFromMap(t *testing.T) {
 }
 
 func TestBuildEvaluator(t *testing.T) {
-	rbac := auth.NewRBAC[auth_test_utils.MockSubject, auth_test_utils.MockResource]()
+	rbac := baccess.NewRBAC[auth_test_utils.MockSubject, auth_test_utils.MockResource]()
 	provider := &MockPredicateProvider{ // Use updated MockPredicateProvider
-		Predicates: map[string]predicates.Predicate[auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]]{
-			"isOwner": func(req auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]) bool {
+		Predicates: map[string]baccess.Predicate[baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]]{
+			"isOwner": func(req baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]) bool {
 				return req.Subject.GetID() == req.Resource.GetID() // Use GetID() from Identifiable
 			},
-			"canEdit": func(req auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]) bool {
+			"canEdit": func(req baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]) bool {
 				return true
 			},
 		},
 	}
 
-	config1 := &config.Config{
-		Policies: map[string]config.RolePolicyConfig{
+	config1 := &baccess.Config{
+		Policies: map[string]baccess.RolePolicyConfig{
 			"admin": {Allow: []string{"*"}},
 			"user":  {Allow: []string{"read", "edit:canEdit", "delete:isOwner"}},
 		},
 	}
 
-	evaluator1, err := config.BuildEvaluator[auth_test_utils.MockSubject, auth_test_utils.MockResource](config1, rbac, provider)
+	evaluator1, err := baccess.BuildEvaluator[auth_test_utils.MockSubject, auth_test_utils.MockResource](config1, rbac, provider)
 	assert.NoError(t, err)
 	assert.NotNil(t, evaluator1)
 
-	adminReq := auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
+	adminReq := baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
 		Subject:  auth_test_utils.MockSubject{ID: "admin", Roles: []string{"admin"}},
 		Resource: auth_test_utils.MockResource{ID: "doc1"},
 		Action:   "any:action",
@@ -134,7 +129,7 @@ func TestBuildEvaluator(t *testing.T) {
 	assert.True(t, evaluator1.Evaluate(adminReq))
 
 	// Test user read access
-	userReq := auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
+	userReq := baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
 		Subject:  auth_test_utils.MockSubject{ID: "user1", Roles: []string{"user"}},
 		Resource: auth_test_utils.MockResource{ID: "doc1"},
 		Action:   "read",
@@ -142,7 +137,7 @@ func TestBuildEvaluator(t *testing.T) {
 	assert.True(t, evaluator1.Evaluate(userReq))
 
 	// Test user edit access with condition
-	userEditReq := auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
+	userEditReq := baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
 		Subject:  auth_test_utils.MockSubject{ID: "user1", Roles: []string{"user"}},
 		Resource: auth_test_utils.MockResource{ID: "doc1"},
 		Action:   "edit:canEdit",
@@ -150,31 +145,31 @@ func TestBuildEvaluator(t *testing.T) {
 	assert.True(t, evaluator1.Evaluate(userEditReq))
 
 	// Test user delete access with condition (isOwner)
-	userOwnerDeleteReq := auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
+	userOwnerDeleteReq := baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
 		Subject:  auth_test_utils.MockSubject{ID: "user1", Roles: []string{"user"}},
 		Resource: auth_test_utils.MockResource{ID: "user1"}, // Subject is owner
 		Action:   "delete:isOwner",
 	}
 	assert.True(t, evaluator1.Evaluate(userOwnerDeleteReq))
 
-	userNonOwnerDeleteReq := auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
+	userNonOwnerDeleteReq := baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
 		Subject:  auth_test_utils.MockSubject{ID: "user2", Roles: []string{"user"}},
 		Resource: auth_test_utils.MockResource{ID: "user1"}, // Subject is NOT owner
 		Action:   "delete:isOwner",
 	}
 	assert.False(t, evaluator1.Evaluate(userNonOwnerDeleteReq))
 
-	config2 := &config.Config{
-		Policies: map[string]config.RolePolicyConfig{
+	config2 := &baccess.Config{
+		Policies: map[string]baccess.RolePolicyConfig{
 			"guest": {Allow: []string{"view:nonExistentPredicate"}},
 		},
 	}
-	evaluator2, err := config.BuildEvaluator[auth_test_utils.MockSubject, auth_test_utils.MockResource](config2, rbac, provider)
+	evaluator2, err := baccess.BuildEvaluator[auth_test_utils.MockSubject, auth_test_utils.MockResource](config2, rbac, provider)
 	assert.Error(t, err) // Expect an error about missing predicate
 	assert.NotNil(t, evaluator2)
 
 	// Even with an error, the evaluator should still deny access if predicate is missing
-	guestReq := auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
+	guestReq := baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
 		Subject:  auth_test_utils.MockSubject{ID: "guest", Roles: []string{"guest"}},
 		Resource: auth_test_utils.MockResource{ID: "publicDoc"},
 		Action:   "view:nonExistentPredicate",
@@ -182,29 +177,29 @@ func TestBuildEvaluator(t *testing.T) {
 	assert.False(t, evaluator2.Evaluate(guestReq))
 
 	// Policy with action wildcard, condition specified by user, policy matches action part of req
-	config3 := &config.Config{
-		Policies: map[string]config.RolePolicyConfig{
+	config3 := &baccess.Config{
+		Policies: map[string]baccess.RolePolicyConfig{
 			"dev": {Allow: []string{"deploy:staging"}}, // Explicit action and condition
 		},
 	}
 	provider3 := &MockPredicateProvider{
-		Predicates: map[string]predicates.Predicate[auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]]{
-			"staging": func(req auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]) bool {
+		Predicates: map[string]baccess.Predicate[baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]]{
+			"staging": func(req baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]) bool {
 				return req.Action == "deploy:staging" // Predicate checks the full action string
 			},
 		},
 	}
-	evaluator3, err := config.BuildEvaluator[auth_test_utils.MockSubject, auth_test_utils.MockResource](config3, rbac, provider3)
+	evaluator3, err := baccess.BuildEvaluator[auth_test_utils.MockSubject, auth_test_utils.MockResource](config3, rbac, provider3)
 	assert.NoError(t, err)
 
-	devReq := auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
+	devReq := baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
 		Subject:  auth_test_utils.MockSubject{ID: "dev1", Roles: []string{"dev"}},
 		Resource: auth_test_utils.MockResource{ID: "app1"},
 		Action:   "deploy:staging",
 	}
 	assert.True(t, evaluator3.Evaluate(devReq))
 
-	devReqWrongCondition := auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
+	devReqWrongCondition := baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
 		Subject:  auth_test_utils.MockSubject{ID: "dev1", Roles: []string{"dev"}},
 		Resource: auth_test_utils.MockResource{ID: "app1"},
 		Action:   "deploy:production",
@@ -212,29 +207,29 @@ func TestBuildEvaluator(t *testing.T) {
 	assert.False(t, evaluator3.Evaluate(devReqWrongCondition))
 
 	// policyKey condition is "*"
-	config4 := &config.Config{
-		Policies: map[string]config.RolePolicyConfig{
+	config4 := &baccess.Config{
+		Policies: map[string]baccess.RolePolicyConfig{
 			"viewer": {Allow: []string{"view:*"}},
 		},
 	}
-	evaluator4, err := config.BuildEvaluator[auth_test_utils.MockSubject, auth_test_utils.MockResource](config4, rbac, provider)
+	evaluator4, err := baccess.BuildEvaluator[auth_test_utils.MockSubject, auth_test_utils.MockResource](config4, rbac, provider)
 	assert.NoError(t, err)
 
-	viewerReq := auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
+	viewerReq := baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
 		Subject:  auth_test_utils.MockSubject{ID: "viewer1", Roles: []string{"viewer"}},
 		Resource: auth_test_utils.MockResource{ID: "data"},
 		Action:   "view:some_sub_action",
 	}
 	assert.True(t, evaluator4.Evaluate(viewerReq))
 
-	viewerReqNoCondition := auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
+	viewerReqNoCondition := baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
 		Subject:  auth_test_utils.MockSubject{ID: "viewer1", Roles: []string{"viewer"}},
 		Resource: auth_test_utils.MockResource{ID: "data"},
 		Action:   "view",
 	}
 	assert.True(t, evaluator4.Evaluate(viewerReqNoCondition))
 
-	viewerReqWrongAction := auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
+	viewerReqWrongAction := baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
 		Subject:  auth_test_utils.MockSubject{ID: "viewer1", Roles: []string{"viewer"}},
 		Resource: auth_test_utils.MockResource{ID: "data"},
 		Action:   "edit:some_sub_action",
@@ -242,29 +237,29 @@ func TestBuildEvaluator(t *testing.T) {
 	assert.False(t, evaluator4.Evaluate(viewerReqWrongAction))
 
 	// "action" rule without explicit condition in config, treated as "action:*" (implicitly always true)
-	config5 := &config.Config{
-		Policies: map[string]config.RolePolicyConfig{
+	config5 := &baccess.Config{
+		Policies: map[string]baccess.RolePolicyConfig{
 			"printer": {Allow: []string{"print"}},
 		},
 	}
-	evaluator5, err := config.BuildEvaluator[auth_test_utils.MockSubject, auth_test_utils.MockResource](config5, rbac, provider)
+	evaluator5, err := baccess.BuildEvaluator[auth_test_utils.MockSubject, auth_test_utils.MockResource](config5, rbac, provider)
 	assert.NoError(t, err)
 
-	printerReq := auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
+	printerReq := baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
 		Subject:  auth_test_utils.MockSubject{ID: "printer1", Roles: []string{"printer"}},
 		Resource: auth_test_utils.MockResource{ID: "document"},
 		Action:   "print",
 	}
 	assert.True(t, evaluator5.Evaluate(printerReq))
 
-	printerReqWithCondition := auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
+	printerReqWithCondition := baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
 		Subject:  auth_test_utils.MockSubject{ID: "printer1", Roles: []string{"printer"}},
 		Resource: auth_test_utils.MockResource{ID: "document"},
 		Action:   "print:draft",
 	}
 	assert.True(t, evaluator5.Evaluate(printerReqWithCondition))
 
-	printerReqWrongAction := auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
+	printerReqWrongAction := baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
 		Subject:  auth_test_utils.MockSubject{ID: "printer1", Roles: []string{"printer"}},
 		Resource: auth_test_utils.MockResource{ID: "document"},
 		Action:   "scan",

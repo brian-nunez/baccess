@@ -1,4 +1,4 @@
-package auth
+package baccess
 
 type AccessRequest[S any, R any] struct {
 	Subject  S

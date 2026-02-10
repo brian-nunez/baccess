@@ -1,11 +1,9 @@
-package config
+package baccess
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/brian-nunez/baccess/pkg/auth"
-	"github.com/brian-nunez/baccess/pkg/predicates"
 	"os"
 	"strings"
 )
@@ -47,18 +45,18 @@ func LoadConfigFromMap(data map[string]any) (*Config, error) {
 }
 
 type PredicateProvider[S any, R any] interface {
-	GetPredicate(name string) (predicates.Predicate[auth.AccessRequest[S, R]], error)
+	GetPredicate(name string) (Predicate[AccessRequest[S, R]], error)
 }
 
-func BuildEvaluator[S auth.RoleBearer, R any](
+func BuildEvaluator[S RoleBearer, R any](
 	cfg *Config,
-	rbac *auth.RBAC[S, R],
+	rbac *RBAC[S, R],
 	provider PredicateProvider[S, R],
-) (*auth.Evaluator[S, R], error) {
-	evaluator := auth.NewEvaluator[S, R]()
+) (*Evaluator[S, R], error) {
+	evaluator := NewEvaluator[S, R]()
 	var errs error
 
-	alwaysTrue := func(req auth.AccessRequest[S, R]) bool { return true }
+	alwaysTrue := func(req AccessRequest[S, R]) bool { return true }
 
 	for role, policy := range cfg.Policies {
 		for _, allowRule := range policy.Allow {
@@ -74,7 +72,7 @@ func BuildEvaluator[S auth.RoleBearer, R any](
 				conditionName = "*"
 			}
 
-			var conditionPred predicates.Predicate[auth.AccessRequest[S, R]]
+			var conditionPred Predicate[AccessRequest[S, R]]
 
 			if conditionName == "*" {
 				conditionPred = alwaysTrue
@@ -82,7 +80,7 @@ func BuildEvaluator[S auth.RoleBearer, R any](
 				p, err := provider.GetPredicate(conditionName)
 				if err != nil {
 					errs = errors.Join(errs, fmt.Errorf("role '%s': rule '%s': failed to get predicate '%s': %w", role, allowRule, conditionName, err))
-					conditionPred = auth.Deny[S, R]()
+					conditionPred = Deny[S, R]()
 				} else {
 					conditionPred = p
 				}

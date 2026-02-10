@@ -12,10 +12,10 @@ package predicates
 type Predicate[T any] func(T) bool
 ```
 
-In the context of `Baccess`, the generic type `T` is almost always an `auth.AccessRequest[S, R]`, where `S` is your Subject type and `R` is your Resource type.
+In the context of `Baccess`, the generic type `T` is almost always a `baccess.AccessRequest[S, R]`, where `S` is your Subject type and `R` is your Resource type.
 
 A predicate for checking access would therefore have this signature:
-`func(req auth.AccessRequest[User, Document]) bool`
+`func(req baccess.AccessRequest[User, Document]) bool`
 
 ### Predicate Methods: `And`, `Or`, `Not`
 
@@ -31,7 +31,7 @@ The `And` method combines two predicates, returning a new predicate that is only
 isEditor := rbac.HasRole("editor")
 
 // Predicate 2: Document must be in "draft" state.
-isDraft := auth.ResourceMatches(
+isDraft := baccess.ResourceMatches(
     func(d Document) string { return d.Status },
     "draft",
 )
@@ -47,10 +47,10 @@ The `Or` method combines two predicates, returning a new predicate that is true 
 **Example:**
 ```go
 // Predicate 1: User is the owner of the document.
-isOwner := auth.FieldEquals(...)
+isOwner := baccess.FieldEquals(...)
 
 // Predicate 2: User is a collaborator on the document.
-isCollaborator := auth.SubjectInResourceList(...)
+isCollaborator := baccess.SubjectInResourceList(...)
 
 // Combined Predicate: Can access if owner OR collaborator.
 canAccess := isOwner.Or(isCollaborator)
@@ -63,12 +63,12 @@ The `Not` method inverts a predicate, returning a new predicate that is true if 
 **Example:**
 ```go
 // Predicate: Checks if a user's account is suspended.
-isSuspended := auth.SubjectAttrTrue("is_suspended")
+isSuspended := baccess.SubjectAttrTrue("is_suspended")
 
 // Inverted Predicate: True only if the user is NOT suspended.
 isNotSuspended := isSuspended.Not()
 
-// You can also write it as auth.Not(isSuspended)
+// You can also write it as baccess.Not(isSuspended)
 ```
 
 ## Creating and Registering Custom Predicates
@@ -77,8 +77,8 @@ While the standard library provides many useful predicates, you will often need 
 
 **To create a custom predicate:**
 
-1.  Write a function that matches the `predicates.Predicate` signature.
-2.  Register it with an `auth.Registry` instance.
+1.  Write a function that matches the `baccess.Predicate` signature.
+2.  Register it with a `baccess.Registry` instance.
 
 **Example:** Let's create a predicate that checks if a blog post is being edited within 5 minutes of its creation time.
 
@@ -86,25 +86,24 @@ While the standard library provides many useful predicates, you will often need 
 package main
 
 import (
-    "brian-nunez/baccess/pkg/auth"
-    "brian-nunez/baccess/pkg/predicates"
+    baccess "github.com/brian-nunez/baccess/v1"
     "time"
 )
 
 // Custom predicate function
-func isEditableWithin5Minutes(req auth.AccessRequest[User, Post]) bool {
+func isEditableWithin5Minutes(req baccess.AccessRequest[User, Post]) bool {
     post := req.Resource
     return time.Since(post.CreatedAt) < (5 * time.Minute)
 }
 
 func main() {
     // ... setup ...
-    registry := auth.NewRegistry[User, Post]()
+    registry := baccess.NewRegistry[User, Post]()
 
     // Register the custom function as a predicate with a specific name.
     registry.Register(
         "isEditableWithin5Minutes",
-        predicates.Predicate[auth.AccessRequest[User, Post]](isEditableWithin5Minutes),
+        baccess.Predicate[baccess.AccessRequest[User, Post]](isEditableWithin5Minutes),
     )
 
     // Now you can use "isEditableWithin5Minutes" as a condition name
@@ -112,7 +111,7 @@ func main() {
 }
 ```
 
-## Standard Predicate Library (`pkg/auth/library.go`)
+## Standard Predicate Library (`library.go`)
 
 `Baccess` includes a standard library of generic, reusable predicates to cover the most common authorization scenarios.
 
@@ -142,7 +141,7 @@ Compares a value extracted from the Subject with a value extracted from the Reso
 
 **Example:** Check if the user's ID matches the document's `OwnerID`.
 ```go
-isOwner := auth.FieldEquals(
+isOwner := baccess.FieldEquals(
     func(u User) string { return u.ID },
     func(d Document) string { return d.OwnerID },
 )
@@ -161,7 +160,7 @@ The opposite of `FieldEquals`.
 
 **Example:** Check if a user is trying to transfer a resource to themselves.
 ```go
-isNotSelfTransfer := auth.FieldNotEquals(
+isNotSelfTransfer := baccess.FieldNotEquals(
     func(u User) string { return u.ID },
     func(t TransferRequest) string { return t.RecipientID },
 )
@@ -180,7 +179,7 @@ Compares a value extracted from the Subject against a fixed, constant target val
 
 **Example:** Check if the user's department is "finance".
 ```go
-isFinanceUser := auth.SubjectMatches(
+isFinanceUser := baccess.SubjectMatches(
     func(u User) string { return u.Department },
     "finance",
 )
@@ -199,7 +198,7 @@ Compares a value extracted from the Resource against a fixed, constant target va
 
 **Example:** Check if a document's status is "published".
 ```go
-isPublished := auth.ResourceMatches(
+isPublished := baccess.ResourceMatches(
     func(d Document) string { return d.Status },
     "published",
 )
@@ -218,7 +217,7 @@ Checks if a value extracted from the Subject is present in a list (slice) extrac
 
 **Example:** Check if a user's ID is in a document's list of collaborators.
 ```go
-isCollaborator := auth.SubjectInResourceList(
+isCollaborator := baccess.SubjectInResourceList(
     func(u User) string { return u.ID },
     func(d Document) []string { return d.Collaborators },
 )
@@ -237,7 +236,7 @@ Checks if two lists, one from the Subject and one from the Resource, have at lea
 
 **Example:** Check if any of the user's groups match any of the groups that have access to a folder.
 ```go
-hasGroupAccess := auth.ListIntersection(
+hasGroupAccess := baccess.ListIntersection(
     func(u User) []string { return u.Groups },
     func(f Folder) []string { return f.AllowedGroups },
 )
@@ -247,28 +246,28 @@ hasGroupAccess := auth.ListIntersection(
 
 ### `SubjectAttr...` Predicates
 
-These predicates work on Subjects that implement the `auth.Attributable` interface, which provides a `GetAttribute(key string) any` method. This is useful for checking dynamic attributes that are not strongly typed in your Go structs.
+These predicates work on Subjects that implement the `baccess.Attributable` interface, which provides a `GetAttribute(key string) any` method. This is useful for checking dynamic attributes that are not strongly typed in your Go structs.
 
 *   **`SubjectAttrEquals(key string, val any)`**: True if `Subject.GetAttribute(key) == val`.
     ```go
     // Checks if the user's "country" attribute is "CA"
-    isCanadian := auth.SubjectAttrEquals("country", "CA")
+    isCanadian := baccess.SubjectAttrEquals("country", "CA")
     ```
 
 *   **`SubjectAttrGT(key string, threshold int)`**: True if the attribute is an `int` and is greater than `threshold`.
     ```go
     // Checks if the user's "security_level" is greater than 5
-    isHighSecurity := auth.SubjectAttrGT("security_level", 5)
+    isHighSecurity := baccess.SubjectAttrGT("security_level", 5)
     ```
 
 *   **`SubjectAttrLT(key string, threshold int)`**: True if the attribute is an `int` and is less than `threshold`.
     ```go
     // Checks if the user's "login_attempts" is less than 3
-    notLockedOut := auth.SubjectAttrLT("login_attempts", 3)
+    notLockedOut := baccess.SubjectAttrLT("login_attempts", 3)
     ```
 
 *   **`SubjectAttrTrue(key string)`**: True if the attribute is a `bool` and is `true`.
     ```go
     // Checks if the user's "is_verified" attribute is true
-    isVerified := auth.SubjectAttrTrue("is_verified")
+    isVerified := baccess.SubjectAttrTrue("is_verified")
     ```

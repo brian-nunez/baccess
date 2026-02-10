@@ -3,8 +3,7 @@ package perf
 import (
 	"testing"
 
-	"github.com/brian-nunez/baccess/pkg/auth"
-	"github.com/brian-nunez/baccess/pkg/config"
+	baccess "github.com/brian-nunez/baccess/v1"
 )
 
 type MockUser struct {
@@ -50,22 +49,22 @@ func (d MockDocument) GetAttribute(key string) any {
 }
 
 func BenchmarkPolicyEvaluation(b *testing.B) {
-	rbac := auth.NewRBAC[MockUser, MockDocument]()
-	registry := auth.NewRegistry[MockUser, MockDocument]()
+	rbac := baccess.NewRBAC[MockUser, MockDocument]()
+	registry := baccess.NewRegistry[MockUser, MockDocument]()
 
-	isOwnerPred := auth.FieldEquals(
+	isOwnerPred := baccess.FieldEquals(
 		func(u MockUser) string { return u.ID },
 		func(d MockDocument) string { return d.OwnerID },
 	)
 	registry.Register("isOwner", isOwnerPred)
 
-	isCollaboratorPred := auth.SubjectInResourceList(
+	isCollaboratorPred := baccess.SubjectInResourceList(
 		func(u MockUser) string { return u.ID },
 		func(d MockDocument) []string { return d.Collaborators },
 	)
 	registry.Register("isCollaborator", isCollaboratorPred)
 
-	isDepartmentMemberPred := auth.FieldEquals(
+	isDepartmentMemberPred := baccess.FieldEquals(
 		func(u MockUser) string { return u.Department },
 		func(d MockDocument) string {
 			return "Engineering"
@@ -73,13 +72,13 @@ func BenchmarkPolicyEvaluation(b *testing.B) {
 	)
 	registry.Register("isDepartmentMember", isDepartmentMemberPred)
 
-	docStatusIsDraftPred := auth.ResourceMatches[MockUser](
+	docStatusIsDraftPred := baccess.ResourceMatches[MockUser](
 		func(d MockDocument) string { return d.Status },
 		"draft",
 	)
 	registry.Register("docStatusIsDraft", docStatusIsDraftPred)
 
-	notOwnerPred := auth.Not(isOwnerPred)
+	notOwnerPred := baccess.Not(isOwnerPred)
 	registry.Register("isNotOwner", notOwnerPred)
 
 	canUpdatePred := isOwnerPred.Or(isCollaboratorPred)
@@ -88,8 +87,8 @@ func BenchmarkPolicyEvaluation(b *testing.B) {
 	canPublishPred := isOwnerPred.And(docStatusIsDraftPred)
 	registry.Register("canPublish", canPublishPred)
 
-	cfg := &config.Config{
-		Policies: map[string]config.RolePolicyConfig{
+	cfg := &baccess.Config{
+		Policies: map[string]baccess.RolePolicyConfig{
 			"admin": {
 				Allow: []string{"*"},
 			},
@@ -110,7 +109,7 @@ func BenchmarkPolicyEvaluation(b *testing.B) {
 		},
 	}
 
-	evaluator, err := config.BuildEvaluator(cfg, rbac, registry)
+	evaluator, err := baccess.BuildEvaluator(cfg, rbac, registry)
 	if err != nil {
 		b.Fatalf("Failed to build evaluator: %v", err)
 	}
@@ -128,101 +127,100 @@ func BenchmarkPolicyEvaluation(b *testing.B) {
 	b.ResetTimer()
 
 	b.Run("ReadAccess_SimpleAllow", func(b *testing.B) {
-		req := auth.AccessRequest[MockUser, MockDocument]{Subject: editorUser, Resource: ownedDoc, Action: "read"}
+		req := baccess.AccessRequest[MockUser, MockDocument]{Subject: editorUser, Resource: ownedDoc, Action: "read"}
 		for b.Loop() {
 			evaluator.Evaluate(req)
 		}
 	})
 
 	b.Run("DeleteAccess_Owner_True", func(b *testing.B) {
-		req := auth.AccessRequest[MockUser, MockDocument]{Subject: editorUser, Resource: ownedDoc, Action: "delete"}
+		req := baccess.AccessRequest[MockUser, MockDocument]{Subject: editorUser, Resource: ownedDoc, Action: "delete"}
 		for b.Loop() {
 			evaluator.Evaluate(req)
 		}
 	})
 
 	b.Run("DeleteAccess_Owner_False", func(b *testing.B) {
-		req := auth.AccessRequest[MockUser, MockDocument]{Subject: editorUser, Resource: alienDoc, Action: "delete"}
+		req := baccess.AccessRequest[MockUser, MockDocument]{Subject: editorUser, Resource: alienDoc, Action: "delete"}
 		for b.Loop() {
 			evaluator.Evaluate(req)
 		}
 	})
 
 	b.Run("UpdateAccess_OwnerOrCollaborator_OwnerTrue", func(b *testing.B) {
-		req := auth.AccessRequest[MockUser, MockDocument]{Subject: editorUser, Resource: ownedDoc, Action: "update"}
+		req := baccess.AccessRequest[MockUser, MockDocument]{Subject: editorUser, Resource: ownedDoc, Action: "update"}
 		for b.Loop() {
 			evaluator.Evaluate(req)
 		}
 	})
 
 	b.Run("UpdateAccess_OwnerOrCollaborator_CollaboratorTrue", func(b *testing.B) {
-		req := auth.AccessRequest[MockUser, MockDocument]{Subject: editorUser, Resource: collabDoc, Action: "update"}
+		req := baccess.AccessRequest[MockUser, MockDocument]{Subject: editorUser, Resource: collabDoc, Action: "update"}
 		for b.Loop() {
 			evaluator.Evaluate(req)
 		}
 	})
 
 	b.Run("UpdateAccess_OwnerOrCollaborator_False", func(b *testing.B) {
-		req := auth.AccessRequest[MockUser, MockDocument]{Subject: otherUser, Resource: ownedDoc, Action: "update"}
+		req := baccess.AccessRequest[MockUser, MockDocument]{Subject: otherUser, Resource: ownedDoc, Action: "update"}
 		for b.Loop() {
 			evaluator.Evaluate(req)
 		}
 	})
 
 	b.Run("ArchiveAccess_NotOwner_True", func(b *testing.B) {
-		req := auth.AccessRequest[MockUser, MockDocument]{Subject: editorUser, Resource: alienDoc, Action: "archive"}
+		req := baccess.AccessRequest[MockUser, MockDocument]{Subject: editorUser, Resource: alienDoc, Action: "archive"}
 		for b.Loop() {
 			evaluator.Evaluate(req)
 		}
 	})
 
 	b.Run("ArchiveAccess_NotOwner_False", func(b *testing.B) {
-		req := auth.AccessRequest[MockUser, MockDocument]{Subject: editorUser, Resource: ownedDoc, Action: "archive"}
+		req := baccess.AccessRequest[MockUser, MockDocument]{Subject: editorUser, Resource: ownedDoc, Action: "archive"}
 		for b.Loop() {
 			evaluator.Evaluate(req)
 		}
 	})
 
 	b.Run("PublishAccess_OwnerAndDraft_True", func(b *testing.B) {
-		req := auth.AccessRequest[MockUser, MockDocument]{Subject: editorUser, Resource: ownedDoc, Action: "publish"}
+		req := baccess.AccessRequest[MockUser, MockDocument]{Subject: editorUser, Resource: ownedDoc, Action: "publish"}
 		for b.Loop() {
 			evaluator.Evaluate(req)
 		}
 	})
 
 	b.Run("PublishAccess_OwnerAndDraft_False_NotOwner", func(b *testing.B) {
-		req := auth.AccessRequest[MockUser, MockDocument]{Subject: contributorUser, Resource: ownedDoc, Action: "publish"}
+		req := baccess.AccessRequest[MockUser, MockDocument]{Subject: contributorUser, Resource: ownedDoc, Action: "publish"}
 		for b.Loop() {
 			evaluator.Evaluate(req)
 		}
 	})
 
 	b.Run("PublishAccess_OwnerAndDraft_False_NotDraft", func(b *testing.B) {
-		req := auth.AccessRequest[MockUser, MockDocument]{Subject: editorUser, Resource: publishedOwnedDoc, Action: "publish"}
+		req := baccess.AccessRequest[MockUser, MockDocument]{Subject: editorUser, Resource: publishedOwnedDoc, Action: "publish"}
 		for b.Loop() {
 			evaluator.Evaluate(req)
 		}
 	})
 
 	b.Run("CommentAccess_DepartmentMember_True", func(b *testing.B) {
-		req := auth.AccessRequest[MockUser, MockDocument]{Subject: contributorUser, Resource: ownedDoc, Action: "comment"}
+		req := baccess.AccessRequest[MockUser, MockDocument]{Subject: contributorUser, Resource: ownedDoc, Action: "comment"}
 		for b.Loop() {
 			evaluator.Evaluate(req)
 		}
 	})
 
 	b.Run("CommentAccess_DepartmentMember_False", func(b *testing.B) {
-		req := auth.AccessRequest[MockUser, MockDocument]{Subject: otherUser, Resource: ownedDoc, Action: "comment"}
+		req := baccess.AccessRequest[MockUser, MockDocument]{Subject: otherUser, Resource: ownedDoc, Action: "comment"}
 		for b.Loop() {
 			evaluator.Evaluate(req)
 		}
 	})
 
 	b.Run("AdminAccess_WildcardAction", func(b *testing.B) {
-		req := auth.AccessRequest[MockUser, MockDocument]{Subject: adminUser, Resource: alienDoc, Action: "anything"}
+		req := baccess.AccessRequest[MockUser, MockDocument]{Subject: adminUser, Resource: alienDoc, Action: "anything"}
 		for b.Loop() {
 			evaluator.Evaluate(req)
 		}
 	})
 }
-

@@ -1,15 +1,15 @@
-package auth_test
+package auth_test_utils
 
-import "github.com/brian-nunez/baccess/pkg/auth"
+import baccess "github.com/brian-nunez/baccess/v1"
 
-var _ auth.RoleBearer = MockRoleBearer{}
-var _ auth.Identifiable = MockIdentifiable{}
-var _ auth.Attributable = MockAttributable{}
-var _ auth.RoleBearer = MockSubject{}
-var _ auth.Identifiable = MockSubject{}
-var _ auth.Attributable = MockSubject{}
-var _ auth.Identifiable = MockResource{}
-var _ auth.Attributable = MockResource{}
+var _ baccess.RoleBearer = MockRoleBearer{}
+var _ baccess.Identifiable = MockIdentifiable{}
+var _ baccess.Attributable = MockAttributable{}
+var _ baccess.RoleBearer = MockSubject{}
+var _ baccess.Identifiable = MockSubject{}
+var _ baccess.Attributable = MockSubject{}
+var _ baccess.Identifiable = MockResource{}
+var _ baccess.Attributable = MockResource{}
 
 type MockRoleBearer struct {
 	Roles []string

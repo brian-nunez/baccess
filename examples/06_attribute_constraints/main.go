@@ -2,8 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/brian-nunez/baccess/pkg/auth"
-	"github.com/brian-nunez/baccess/pkg/config"
+	baccess "github.com/brian-nunez/baccess/v1"
 )
 
 type User struct {
@@ -26,20 +25,20 @@ func main() {
 			},
 		},
 	}
-	cfg, _ := config.LoadConfigFromMap(cfgData)
+	cfg, _ := baccess.LoadConfigFromMap(cfgData)
 
-	rbac := auth.NewRBAC[User, Area]()
-	registry := auth.NewRegistry[User, Area]()
+	rbac := baccess.NewRBAC[User, Area]()
+	registry := baccess.NewRegistry[User, Area]()
 
 	// Register generic attribute check
-	registry.Register("level_above_10", auth.SubjectAttrGT[User, Area]("level", 10))
+	registry.Register("level_above_10", baccess.SubjectAttrGT[User, Area]("level", 10))
 
-	evaluator, _ := config.BuildEvaluator(cfg, rbac, registry)
+	evaluator, _ := baccess.BuildEvaluator(cfg, rbac, registry)
 
 	newbie := User{Roles: []string{"player"}, Attrs: map[string]any{"level": 5}}
 	pro := User{Roles: []string{"player"}, Attrs: map[string]any{"level": 20}}
 	area := Area{}
 
-	fmt.Printf("Newbie enter VIP: %v\n", evaluator.Evaluate(auth.AccessRequest[User, Area]{Subject: newbie, Resource: area, Action: "enter_vip"}))
-	fmt.Printf("Pro enter VIP:    %v\n", evaluator.Evaluate(auth.AccessRequest[User, Area]{Subject: pro, Resource: area, Action: "enter_vip"}))
+	fmt.Printf("Newbie enter VIP: %v\n", evaluator.Evaluate(baccess.AccessRequest[User, Area]{Subject: newbie, Resource: area, Action: "enter_vip:level_above_10"}))
+	fmt.Printf("Pro enter VIP:    %v\n", evaluator.Evaluate(baccess.AccessRequest[User, Area]{Subject: pro, Resource: area, Action: "enter_vip:level_above_10"}))
 }

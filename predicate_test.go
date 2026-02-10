@@ -1,16 +1,16 @@
-package predicates_test
+package baccess_test
 
 import (
 	"testing"
 
-	"github.com/brian-nunez/baccess/pkg/predicates"
+	baccess "github.com/brian-nunez/baccess/v1"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPredicate_IsSatisfiedBy(t *testing.T) {
 	testCases := []struct {
 		name      string
-		predicate predicates.Predicate[int]
+		predicate baccess.Predicate[int]
 		entity    int
 		expected  bool
 	}{
@@ -49,14 +49,14 @@ func TestPredicate_IsSatisfiedBy(t *testing.T) {
 }
 
 func TestPredicate_And(t *testing.T) {
-	alwaysTrue := predicates.Predicate[int](func(i int) bool { return true })
-	alwaysFalse := predicates.Predicate[int](func(i int) bool { return false })
-	isTen := predicates.Predicate[int](func(i int) bool { return i == 10 })
+	alwaysTrue := baccess.Predicate[int](func(i int) bool { return true })
+	alwaysFalse := baccess.Predicate[int](func(i int) bool { return false })
+	isTen := baccess.Predicate[int](func(i int) bool { return i == 10 })
 
 	testCases := []struct {
 		name      string
-		predicate predicates.Predicate[int]
-		other     predicates.Predicate[int]
+		predicate baccess.Predicate[int]
+		other     baccess.Predicate[int]
 		entity    int
 		expected  bool
 	}{
@@ -128,14 +128,14 @@ func TestPredicate_And(t *testing.T) {
 }
 
 func TestPredicate_Or(t *testing.T) {
-	alwaysTrue := predicates.Predicate[int](func(i int) bool { return true })
-	alwaysFalse := predicates.Predicate[int](func(i int) bool { return false })
-	isTen := predicates.Predicate[int](func(i int) bool { return i == 10 })
+	alwaysTrue := baccess.Predicate[int](func(i int) bool { return true })
+	alwaysFalse := baccess.Predicate[int](func(i int) bool { return false })
+	isTen := baccess.Predicate[int](func(i int) bool { return i == 10 })
 
 	testCases := []struct {
 		name      string
-		predicate predicates.Predicate[int]
-		other     predicates.Predicate[int]
+		predicate baccess.Predicate[int]
+		other     baccess.Predicate[int]
 		entity    int
 		expected  bool
 	}{
@@ -207,13 +207,13 @@ func TestPredicate_Or(t *testing.T) {
 }
 
 func TestPredicate_Not(t *testing.T) {
-	alwaysTrue := predicates.Predicate[int](func(i int) bool { return true })
-	alwaysFalse := predicates.Predicate[int](func(i int) bool { return false })
-	isTen := predicates.Predicate[int](func(i int) bool { return i == 10 })
+	alwaysTrue := baccess.Predicate[int](func(i int) bool { return true })
+	alwaysFalse := baccess.Predicate[int](func(i int) bool { return false })
+	isTen := baccess.Predicate[int](func(i int) bool { return i == 10 })
 
 	testCases := []struct {
 		name      string
-		predicate predicates.Predicate[int]
+		predicate baccess.Predicate[int]
 		entity    int
 		expected  bool
 	}{

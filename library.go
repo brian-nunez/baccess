@@ -1,23 +1,22 @@
-package auth
+package baccess
 
 import (
-	"github.com/brian-nunez/baccess/pkg/predicates"
 	"slices"
 )
 
-func Allow[S any, R any]() predicates.Predicate[AccessRequest[S, R]] {
+func Allow[S any, R any]() Predicate[AccessRequest[S, R]] {
 	return func(req AccessRequest[S, R]) bool { return true }
 }
 
-func Deny[S any, R any]() predicates.Predicate[AccessRequest[S, R]] {
+func Deny[S any, R any]() Predicate[AccessRequest[S, R]] {
 	return func(req AccessRequest[S, R]) bool { return false }
 }
 
-func Is[S any, R any](p predicates.Predicate[AccessRequest[S, R]]) predicates.Predicate[AccessRequest[S, R]] {
+func Is[S any, R any](p Predicate[AccessRequest[S, R]]) Predicate[AccessRequest[S, R]] {
 	return func(req AccessRequest[S, R]) bool { return p(req) }
 }
 
-func Not[S any, R any](p predicates.Predicate[AccessRequest[S, R]]) predicates.Predicate[AccessRequest[S, R]] {
+func Not[S any, R any](p Predicate[AccessRequest[S, R]]) Predicate[AccessRequest[S, R]] {
 	return func(req AccessRequest[S, R]) bool {
 		return !p(req)
 	}
@@ -26,7 +25,7 @@ func Not[S any, R any](p predicates.Predicate[AccessRequest[S, R]]) predicates.P
 func FieldEquals[S any, R any, T comparable](
 	subjVal func(S) T,
 	resVal func(R) T,
-) predicates.Predicate[AccessRequest[S, R]] {
+) Predicate[AccessRequest[S, R]] {
 	return func(req AccessRequest[S, R]) bool {
 		return subjVal(req.Subject) == resVal(req.Resource)
 	}
@@ -35,7 +34,7 @@ func FieldEquals[S any, R any, T comparable](
 func FieldNotEquals[S any, R any, T comparable](
 	subjVal func(S) T,
 	resVal func(R) T,
-) predicates.Predicate[AccessRequest[S, R]] {
+) Predicate[AccessRequest[S, R]] {
 	return func(req AccessRequest[S, R]) bool {
 		return subjVal(req.Subject) != resVal(req.Resource)
 	}
@@ -44,7 +43,7 @@ func FieldNotEquals[S any, R any, T comparable](
 func SubjectMatches[S any, R any, T comparable](
 	extractor func(S) T,
 	target T,
-) predicates.Predicate[AccessRequest[S, R]] {
+) Predicate[AccessRequest[S, R]] {
 	return func(req AccessRequest[S, R]) bool {
 		return extractor(req.Subject) == target
 	}
@@ -53,7 +52,7 @@ func SubjectMatches[S any, R any, T comparable](
 func ResourceMatches[S any, R any, T comparable](
 	extractor func(R) T,
 	target T,
-) predicates.Predicate[AccessRequest[S, R]] {
+) Predicate[AccessRequest[S, R]] {
 	return func(req AccessRequest[S, R]) bool {
 		return extractor(req.Resource) == target
 	}
@@ -62,7 +61,7 @@ func ResourceMatches[S any, R any, T comparable](
 func SubjectInResourceList[S any, R any, T comparable](
 	subjVal func(S) T,
 	resList func(R) []T,
-) predicates.Predicate[AccessRequest[S, R]] {
+) Predicate[AccessRequest[S, R]] {
 	return func(req AccessRequest[S, R]) bool {
 		val := subjVal(req.Subject)
 		list := resList(req.Resource)
@@ -74,7 +73,7 @@ func SubjectInResourceList[S any, R any, T comparable](
 func ListIntersection[S any, R any, T comparable](
 	subjList func(S) []T,
 	resList func(R) []T,
-) predicates.Predicate[AccessRequest[S, R]] {
+) Predicate[AccessRequest[S, R]] {
 	return func(req AccessRequest[S, R]) bool {
 		sList := subjList(req.Subject)
 		rList := resList(req.Resource)
@@ -89,13 +88,13 @@ func ListIntersection[S any, R any, T comparable](
 	}
 }
 
-func SubjectAttrEquals[S Attributable, R any](key string, val any) predicates.Predicate[AccessRequest[S, R]] {
+func SubjectAttrEquals[S Attributable, R any](key string, val any) Predicate[AccessRequest[S, R]] {
 	return func(req AccessRequest[S, R]) bool {
 		return req.Subject.GetAttribute(key) == val
 	}
 }
 
-func SubjectAttrGT[S Attributable, R any](key string, threshold int) predicates.Predicate[AccessRequest[S, R]] {
+func SubjectAttrGT[S Attributable, R any](key string, threshold int) Predicate[AccessRequest[S, R]] {
 	return func(req AccessRequest[S, R]) bool {
 		attr := req.Subject.GetAttribute(key)
 		if v, ok := attr.(int); ok {
@@ -106,7 +105,7 @@ func SubjectAttrGT[S Attributable, R any](key string, threshold int) predicates.
 	}
 }
 
-func SubjectAttrLT[S Attributable, R any](key string, threshold int) predicates.Predicate[AccessRequest[S, R]] {
+func SubjectAttrLT[S Attributable, R any](key string, threshold int) Predicate[AccessRequest[S, R]] {
 	return func(req AccessRequest[S, R]) bool {
 		attr := req.Subject.GetAttribute(key)
 		if v, ok := attr.(int); ok {
@@ -117,7 +116,7 @@ func SubjectAttrLT[S Attributable, R any](key string, threshold int) predicates.
 	}
 }
 
-func SubjectAttrTrue[S Attributable, R any](key string) predicates.Predicate[AccessRequest[S, R]] {
+func SubjectAttrTrue[S Attributable, R any](key string) Predicate[AccessRequest[S, R]] {
 	return func(req AccessRequest[S, R]) bool {
 		attr := req.Subject.GetAttribute(key)
 		if v, ok := attr.(bool); ok {

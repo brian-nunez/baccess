@@ -7,21 +7,21 @@ This guide will walk you through the essential steps to integrate the `Baccess` 
 To get started, add `Baccess` to your project using `go get`:
 
 ```sh
-go get github.com/brian-nunez/baccess
+go get github.com/brian-nunez/baccess/v1
 ```
 
 ## 2. Core Concepts in Code
 
 Before building a policy, let's understand the main components you'll interact with.
 
-*   **`auth.AccessRequest[S, R]`**: This struct holds all context for an authorization check. `S` is the generic type for your Subject (user) and `R` is for your Resource.
+*   **`baccess.AccessRequest[S, R]`**: This struct holds all context for an authorization check. `S` is the generic type for your Subject (user) and `R` is for your Resource.
     *   `Subject S`: The user or entity requesting access.
     *   `Resource R`: The object being accessed.
     -   `Action string`: The operation being performed (e.g., "view", "edit:title").
 
-*   **`predicates.Predicate[T]`**: A function type representing a single authorization rule. It's simply `func(T) bool`. In `Baccess`, `T` is almost always an `auth.AccessRequest`.
+*   **`baccess.Predicate[T]`**: A function type representing a single authorization rule. It's simply `func(T) bool`. In `Baccess`, `T` is almost always a `baccess.AccessRequest`.
 
-*   **`auth.Evaluator[S, R]`**: The engine that evaluates `AccessRequest`s against your policies.
+*   **`baccess.Evaluator[S, R]`**: The engine that evaluates `AccessRequest`s against your policies.
 
 ## 3. A Basic Example: Pure Go Setup
 
@@ -31,13 +31,13 @@ Let's create a simple policy entirely in Go, without any external configuration.
 
 ### Step 3.1: Define Your Types
 
-First, define the `User` and `Document` types that will be your Subject and Resource. They must satisfy the `auth.RoleBearer` interface if you use the RBAC helpers.
+First, define the `User` and `Document` types that will be your Subject and Resource. They must satisfy the `baccess.RoleBearer` interface if you use the RBAC helpers.
 
 ```go
 package main
 
 import (
-    "brian-nunez/baccess/pkg/auth"
+    baccess "github.com/brian-nunez/baccess/v1"
     "fmt"
 )
 
@@ -45,7 +45,7 @@ type User struct {
     Roles []string
 }
 
-// GetRoles satisfies the auth.RoleBearer interface
+// GetRoles satisfies the baccess.RoleBearer interface
 func (u User) GetRoles() []string {
     return u.Roles
 }
@@ -65,8 +65,8 @@ Instantiate the `Evaluator` and the `RBAC` helper.
 
 ```go
     // Inside main()
-    evaluator := auth.NewEvaluator[User, Document]()
-    rbac := auth.NewRBAC[User, Document]()
+    evaluator := baccess.NewEvaluator[User, Document]()
+    rbac := baccess.NewRBAC[User, Document]()
 ```
 
 ### Step 3.3: Define and Add the Policy
@@ -94,7 +94,7 @@ Now, create your users and resources and evaluate their access.
     doc := Document{Content: "A test document."}
 
     // --- Check 1: Editor tries to edit ---
-    req1 := auth.AccessRequest[User, Document]{
+    req1 := baccess.AccessRequest[User, Document]{
         Subject:  editor,
         Resource: doc,
         Action:   "edit",
@@ -104,7 +104,7 @@ Now, create your users and resources and evaluate their access.
 ", canEditorEdit)
 
     // --- Check 2: Viewer tries to edit ---
-    req2 := auth.AccessRequest[User, Document]{
+    req2 := baccess.AccessRequest[User, Document]{
         Subject:  viewer,
         Resource: doc,
         Action:   "edit",
@@ -121,7 +121,7 @@ Now, create your users and resources and evaluate their access.
 package main
 
 import (
-	"brian-nunez/baccess/pkg/auth"
+	baccess "github.com/brian-nunez/baccess/v1"
 	"fmt"
 )
 
@@ -139,8 +139,8 @@ type Document struct {
 
 func main() {
 	// 1. Setup
-	evaluator := auth.NewEvaluator[User, Document]()
-	rbac := auth.NewRBAC[User, Document]()
+	evaluator := baccess.NewEvaluator[User, Document]()
+	rbac := baccess.NewRBAC[User, Document]()
 
 	// 2. Define Policy
 	canEditPolicy := rbac.HasRole("editor")
@@ -152,7 +152,7 @@ func main() {
 	doc := Document{Content: "A test document."}
 
 	// 4. Evaluate
-	req1 := auth.AccessRequest[User, Document]{
+	req1 := baccess.AccessRequest[User, Document]{
 		Subject:  editor,
 		Resource: doc,
 		Action:   "edit",
@@ -160,7 +160,7 @@ func main() {
 	fmt.Printf("Editor can edit: %v (Expected: true)
 ", evaluator.Evaluate(req1))
 
-	req2 := auth.AccessRequest[User, Document]{
+	req2 := baccess.AccessRequest[User, Document]{
 		Subject:  viewer,
 		Resource: doc,
 		Action:   "edit",

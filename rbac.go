@@ -1,11 +1,10 @@
-package auth
+package baccess
 
 import (
-	"github.com/brian-nunez/baccess/pkg/predicates"
 	"slices"
 )
 
-func HasRole[S RoleBearer, R any](role string) predicates.Predicate[AccessRequest[S, R]] {
+func HasRole[S RoleBearer, R any](role string) Predicate[AccessRequest[S, R]] {
 	return func(req AccessRequest[S, R]) bool {
 		roles := req.Subject.GetRoles()
 
@@ -13,7 +12,7 @@ func HasRole[S RoleBearer, R any](role string) predicates.Predicate[AccessReques
 	}
 }
 
-func HasAnyRole[S RoleBearer, R any](targetRoles ...string) predicates.Predicate[AccessRequest[S, R]] {
+func HasAnyRole[S RoleBearer, R any](targetRoles ...string) Predicate[AccessRequest[S, R]] {
 	return func(req AccessRequest[S, R]) bool {
 		userRoles := req.Subject.GetRoles()
 
@@ -35,7 +34,7 @@ func NewRBAC[S RoleBearer, R any]() *RBAC[S, R] {
 }
 
 // HasRole creates a predicate that checks if the subject has the role.
-func (rbac *RBAC[S, R]) HasRole(targetRole string) predicates.Predicate[AccessRequest[S, R]] {
+func (rbac *RBAC[S, R]) HasRole(targetRole string) Predicate[AccessRequest[S, R]] {
 	return func(req AccessRequest[S, R]) bool {
 		userRoles := req.Subject.GetRoles()
 
@@ -44,7 +43,7 @@ func (rbac *RBAC[S, R]) HasRole(targetRole string) predicates.Predicate[AccessRe
 }
 
 // HasAnyRole creates a predicate that checks if the subject has any of the target roles.
-func (rbac *RBAC[S, R]) HasAnyRole(targetRoles ...string) predicates.Predicate[AccessRequest[S, R]] {
+func (rbac *RBAC[S, R]) HasAnyRole(targetRoles ...string) Predicate[AccessRequest[S, R]] {
 	return func(req AccessRequest[S, R]) bool {
 		userRoles := req.Subject.GetRoles()
 
