@@ -2,8 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/brian-nunez/baccess/pkg/auth"
-	"github.com/brian-nunez/baccess/pkg/config"
+	baccess "github.com/brian-nunez/baccess/v1"
 )
 
 // Simple User and Resource
@@ -24,19 +23,19 @@ func main() {
 			"guest": map[string]any{"allow": []string{"read"}},
 		},
 	}
-	cfg, _ := config.LoadConfigFromMap(cfgData)
+	cfg, _ := baccess.LoadConfigFromMap(cfgData)
 
-	rbac := auth.NewRBAC[User, File]()
-	registry := auth.NewRegistry[User, File]() // Empty registry, no custom predicates needed
+	rbac := baccess.NewRBAC[User, File]()
+	registry := baccess.NewRegistry[User, File]() // Empty registry, no custom predicates needed
 
-	evaluator, _ := config.BuildEvaluator(cfg, rbac, registry)
+	evaluator, _ := baccess.BuildEvaluator(cfg, rbac, registry)
 
 	admin := User{Name: "Alice", Roles: []string{"admin"}}
 	guest := User{Name: "Bob", Roles: []string{"guest"}}
 	file := File{Name: "secret.txt"}
 
-	fmt.Printf("Admin delete: %v\n", evaluator.Evaluate(auth.AccessRequest[User, File]{Subject: admin, Resource: file, Action: "delete"}))
-	fmt.Printf("Guest delete: %v\n", evaluator.Evaluate(auth.AccessRequest[User, File]{Subject: guest, Resource: file, Action: "delete"}))
-	fmt.Printf("Guest read:   %v\n", evaluator.Evaluate(auth.AccessRequest[User, File]{Subject: guest, Resource: file, Action: "read"}))
-	fmt.Printf("Admin random:   %v\n", evaluator.Evaluate(auth.AccessRequest[User, File]{Subject: admin, Resource: file, Action: "random:unknown"}))
+	fmt.Printf("Admin delete: %v\n", evaluator.Evaluate(baccess.AccessRequest[User, File]{Subject: admin, Resource: file, Action: "delete"}))
+	fmt.Printf("Guest delete: %v\n", evaluator.Evaluate(baccess.AccessRequest[User, File]{Subject: guest, Resource: file, Action: "delete"}))
+	fmt.Printf("Guest read:   %v\n", evaluator.Evaluate(baccess.AccessRequest[User, File]{Subject: guest, Resource: file, Action: "read"}))
+	fmt.Printf("Admin random:   %v\n", evaluator.Evaluate(baccess.AccessRequest[User, File]{Subject: admin, Resource: file, Action: "random:unknown"}))
 }

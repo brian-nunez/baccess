@@ -17,7 +17,7 @@ If you call `AddPolicy` multiple times with the same `action` key, the `Evaluato
 
 **Example:**
 
-Consider the following setup from `pkg/config/loader.go`:
+Consider the following setup from `config.go`:
 ```json
 "allow": [
   "edit:isOwner",

@@ -2,9 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/brian-nunez/baccess/pkg/auth"
-	"github.com/brian-nunez/baccess/pkg/config"
-	"github.com/brian-nunez/baccess/pkg/predicates"
+	baccess "github.com/brian-nunez/baccess/v1"
 	"strings"
 )
 
@@ -26,23 +24,23 @@ func main() {
 			},
 		},
 	}
-	cfg, _ := config.LoadConfigFromMap(cfgData)
+	cfg, _ := baccess.LoadConfigFromMap(cfgData)
 
-	rbac := auth.NewRBAC[User, Request]()
-	registry := auth.NewRegistry[User, Request]()
+	rbac := baccess.NewRBAC[User, Request]()
+	registry := baccess.NewRegistry[User, Request]()
 
 	// Custom Predicate: Check resource content
-	noBadWords := func(req auth.AccessRequest[User, Request]) bool {
+	noBadWords := func(req baccess.AccessRequest[User, Request]) bool {
 		return !strings.Contains(req.Resource.Body, "spam")
 	}
-	registry.Register("no_bad_words", predicates.Predicate[auth.AccessRequest[User, Request]](noBadWords))
+	registry.Register("no_bad_words", baccess.Predicate[baccess.AccessRequest[User, Request]](noBadWords))
 
-	evaluator, _ := config.BuildEvaluator(cfg, rbac, registry)
+	evaluator, _ := baccess.BuildEvaluator(cfg, rbac, registry)
 
 	mod := User{Roles: []string{"moderator"}}
 	goodReq := Request{Body: "Hello world"}
 	badReq := Request{Body: "Buy this spam now"}
 
-	fmt.Printf("Approve good req: %v\n", evaluator.Evaluate(auth.AccessRequest[User, Request]{Subject: mod, Resource: goodReq, Action: "approve"}))
-	fmt.Printf("Approve bad req:  %v\n", evaluator.Evaluate(auth.AccessRequest[User, Request]{Subject: mod, Resource: badReq, Action: "approve"}))
+	fmt.Printf("Approve good req: %v\n", evaluator.Evaluate(baccess.AccessRequest[User, Request]{Subject: mod, Resource: goodReq, Action: "approve:no_bad_words"}))
+	fmt.Printf("Approve bad req:  %v\n", evaluator.Evaluate(baccess.AccessRequest[User, Request]{Subject: mod, Resource: badReq, Action: "approve:no_bad_words"}))
 }

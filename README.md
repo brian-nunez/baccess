@@ -13,7 +13,7 @@
 ## Installation
 
 ```bash
-go get github.com/brian-nunez/baccess
+go get github.com/brian-nunez/baccess/v1
 ```
 
 ## Quick Start
@@ -40,31 +40,30 @@ package main
 
 import (
     "fmt"
-    "github.com/brian-nunez/baccess/pkg/auth"
-    "github.com/brian-nunez/baccess/pkg/config"
+    baccess "github.com/brian-nunez/baccess/v1"
 )
 
 func main() {
     // 1. Setup Core Components
-    rbac := auth.NewRBAC[User, Document]()
-    registry := auth.NewRegistry[User, Document]()
+    rbac := baccess.NewRBAC[User, Document]()
+    registry := baccess.NewRegistry[User, Document]()
 
     // 2. Register Custom Logic (ABAC)
     // "isOwner" checks if User.ID == Document.OwnerID
-    registry.Register("isOwner", auth.FieldEquals(
+    registry.Register("isOwner", baccess.FieldEquals(
         func(u User) string { return u.ID },
         func(d Document) string { return d.OwnerID },
     ))
 
     // 3. Load Policy from JSON
     // policies: { "editor": { "allow": ["delete:isOwner"] } }
-    cfg, _ := config.LoadConfigFromFile("config.json")
+    cfg, _ := baccess.LoadConfigFromFile("config.json")
     
     // 4. Build the Evaluator
-    evaluator, _ := config.BuildEvaluator(cfg, rbac, registry)
+    evaluator, _ := baccess.BuildEvaluator(cfg, rbac, registry)
 
     // 5. Check Access
-    req := auth.AccessRequest[User, Document]{
+    req := baccess.AccessRequest[User, Document]{
         Subject:  User{ID: "alice", Roles: []string{"editor"}},
         Resource: Document{OwnerID: "alice"},
         Action:   "delete",
@@ -103,4 +102,3 @@ They are the building blocks of `baccess`. You can chain them:
 // Allow if (Admin) OR (Editor AND IsOwner)
 policy := IsAdmin.Or(IsEditor.And(IsOwner))
 ```
-

@@ -1,6 +1,6 @@
-.PHONY: test coverage clean
+.PHONY: test coverage clean perf
 
-GO_PACKAGES = ./pkg/predicates ./pkg/auth ./pkg/config
+GO_PACKAGES = ./
 
 test:
 	@echo "Ensuring Go modules are tidy..."
@@ -23,5 +23,5 @@ clean:
 
 perf:
 	@echo "Running performance tests..."
-	go test -bench=. ./pkg/auth/perf -benchmem -benchtime=100000000x
+	go test -bench=. ./perf -benchmem -benchtime=100000000x
 	@echo "Performance tests completed."

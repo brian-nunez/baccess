@@ -1,47 +1,46 @@
-package auth_test
+package baccess_test
 
 import (
 	"testing"
 
-	"github.com/brian-nunez/baccess/pkg/auth"
-	auth_test_utils "github.com/brian-nunez/baccess/pkg/auth/test"
-	"github.com/brian-nunez/baccess/pkg/predicates"
+	baccess "github.com/brian-nunez/baccess/v1"
+	auth_test_utils "github.com/brian-nunez/baccess/v1/test"
 	"github.com/stretchr/testify/assert"
 )
 
-func alwaysTrue[S any, R any]() predicates.Predicate[auth.AccessRequest[S, R]] {
-	return func(req auth.AccessRequest[S, R]) bool { return true }
+func alwaysTrue[S any, R any]() baccess.Predicate[baccess.AccessRequest[S, R]] {
+	return func(req baccess.AccessRequest[S, R]) bool { return true }
 }
 
-func alwaysFalse[S any, R any]() predicates.Predicate[auth.AccessRequest[S, R]] {
-	return func(req auth.AccessRequest[S, R]) bool { return false }
+func alwaysFalse[S any, R any]() baccess.Predicate[baccess.AccessRequest[S, R]] {
+	return func(req baccess.AccessRequest[S, R]) bool { return false }
 }
 
-func isOwner() predicates.Predicate[auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]] {
-	return func(req auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]) bool {
+func isOwner() baccess.Predicate[baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]] {
+	return func(req baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]) bool {
 		return req.Subject.ID == req.Resource.OwnerID
 	}
 }
 
-func isAdmin() predicates.Predicate[auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]] {
-	return func(req auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]) bool {
+func isAdmin() baccess.Predicate[baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]] {
+	return func(req baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]) bool {
 		return req.Subject.ID == "admin"
 	}
 }
 
-func isDraft() predicates.Predicate[auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]] {
-	return func(req auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]) bool {
+func isDraft() baccess.Predicate[baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]] {
+	return func(req baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]) bool {
 		return req.Resource.Status == "draft"
 	}
 }
 
 func TestNewEvaluator(t *testing.T) {
-	evaluator := auth.NewEvaluator[auth_test_utils.MockSubject, auth_test_utils.MockResource]()
+	evaluator := baccess.NewEvaluator[auth_test_utils.MockSubject, auth_test_utils.MockResource]()
 	assert.NotNil(t, evaluator)
 	// Cannot assert on evaluator.policies directly as it's unexported.
 	// Instead, we can verify its state indirectly through Evaluate calls.
 	// A new evaluator should deny all access by default.
-	req := auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
+	req := baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
 		Subject:  auth_test_utils.MockSubject{},
 		Resource: auth_test_utils.MockResource{},
 		Action:   "any",
@@ -50,23 +49,23 @@ func TestNewEvaluator(t *testing.T) {
 }
 
 func TestAddPolicy(t *testing.T) {
-	evaluator := auth.NewEvaluator[auth_test_utils.MockSubject, auth_test_utils.MockResource]()
+	evaluator := baccess.NewEvaluator[auth_test_utils.MockSubject, auth_test_utils.MockResource]()
 	subject := auth_test_utils.MockSubject{ID: "test"}
 	resource := auth_test_utils.MockResource{ID: "test"}
 
 	evaluator.AddPolicy("read", alwaysTrue[auth_test_utils.MockSubject, auth_test_utils.MockResource]())
-	assert.True(t, evaluator.Evaluate(auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{Subject: subject, Resource: resource, Action: "read"}))
-	assert.False(t, evaluator.Evaluate(auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{Subject: subject, Resource: resource, Action: "write"}))
+	assert.True(t, evaluator.Evaluate(baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{Subject: subject, Resource: resource, Action: "read"}))
+	assert.False(t, evaluator.Evaluate(baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{Subject: subject, Resource: resource, Action: "write"}))
 
 	evaluator.AddPolicy("read", alwaysFalse[auth_test_utils.MockSubject, auth_test_utils.MockResource]())
-	assert.True(t, evaluator.Evaluate(auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{Subject: subject, Resource: resource, Action: "read"}))
+	assert.True(t, evaluator.Evaluate(baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{Subject: subject, Resource: resource, Action: "read"}))
 
 	evaluator.AddPolicy("write", alwaysTrue[auth_test_utils.MockSubject, auth_test_utils.MockResource]())
-	assert.True(t, evaluator.Evaluate(auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{Subject: subject, Resource: resource, Action: "write"}))
+	assert.True(t, evaluator.Evaluate(baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{Subject: subject, Resource: resource, Action: "write"}))
 }
 
 func TestEvaluator_Evaluate(t *testing.T) {
-	evaluator := auth.NewEvaluator[auth_test_utils.MockSubject, auth_test_utils.MockResource]()
+	evaluator := baccess.NewEvaluator[auth_test_utils.MockSubject, auth_test_utils.MockResource]()
 	adminSubject := auth_test_utils.MockSubject{ID: "admin"}
 	ownerSubject := auth_test_utils.MockSubject{ID: "user1"}
 	otherSubject := auth_test_utils.MockSubject{ID: "user2"}
@@ -192,7 +191,7 @@ func TestEvaluator_Evaluate(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			req := auth.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
+			req := baccess.AccessRequest[auth_test_utils.MockSubject, auth_test_utils.MockResource]{
 				Subject:  tc.subject,
 				Resource: tc.resource,
 				Action:   tc.action,

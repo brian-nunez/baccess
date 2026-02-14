@@ -1,21 +1,20 @@
-package auth
+package baccess
 
 import (
-	"github.com/brian-nunez/baccess/pkg/predicates"
 	"strings"
 )
 
 type Evaluator[S any, R any] struct {
-	policies map[string]predicates.Predicate[AccessRequest[S, R]]
+	policies map[string]Predicate[AccessRequest[S, R]]
 }
 
 func NewEvaluator[S any, R any]() *Evaluator[S, R] {
 	return &Evaluator[S, R]{
-		policies: make(map[string]predicates.Predicate[AccessRequest[S, R]]),
+		policies: make(map[string]Predicate[AccessRequest[S, R]]),
 	}
 }
 
-func (e *Evaluator[S, R]) AddPolicy(action string, p predicates.Predicate[AccessRequest[S, R]]) {
+func (e *Evaluator[S, R]) AddPolicy(action string, p Predicate[AccessRequest[S, R]]) {
 	if existing, ok := e.policies[action]; ok {
 		e.policies[action] = existing.Or(p)
 	} else {
@@ -24,7 +23,7 @@ func (e *Evaluator[S, R]) AddPolicy(action string, p predicates.Predicate[Access
 }
 
 func (e *Evaluator[S, R]) Evaluate(req AccessRequest[S, R]) bool {
-	var combinedPredicate predicates.Predicate[AccessRequest[S, R]]
+	var combinedPredicate Predicate[AccessRequest[S, R]]
 
 	reqActionBase := req.Action
 	reqActionCondition := ""

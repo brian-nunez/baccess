@@ -1,4 +1,4 @@
-module github.com/brian-nunez/baccess
+module github.com/brian-nunez/baccess/v1
 
 go 1.25.0
 

@@ -2,8 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/brian-nunez/baccess/pkg/auth"
-	"github.com/brian-nunez/baccess/pkg/config"
+	baccess "github.com/brian-nunez/baccess/v1"
 )
 
 type User struct {
@@ -25,24 +24,24 @@ func main() {
 			},
 		},
 	}
-	cfg, _ := config.LoadConfigFromMap(cfgData)
+	cfg, _ := baccess.LoadConfigFromMap(cfgData)
 
-	rbac := auth.NewRBAC[User, Project]()
-	registry := auth.NewRegistry[User, Project]()
+	rbac := baccess.NewRBAC[User, Project]()
+	registry := baccess.NewRegistry[User, Project]()
 
 	// Check if User ID is in Project's Team list
-	registry.Register("isTeamMember", auth.SubjectInResourceList(
+	registry.Register("isTeamMember", baccess.SubjectInResourceList(
 		func(u User) string { return u.ID },
 		func(p Project) []string { return p.TeamIDs },
 	))
 
-	evaluator, _ := config.BuildEvaluator(cfg, rbac, registry)
+	evaluator, _ := baccess.BuildEvaluator(cfg, rbac, registry)
 
 	dev := User{ID: "dev1", Roles: []string{"developer"}}
 	outsider := User{ID: "dev2", Roles: []string{"developer"}}
 
 	proj := Project{TeamIDs: []string{"dev1", "lead1"}}
 
-	fmt.Printf("Dev1 commit:   %v\n", evaluator.Evaluate(auth.AccessRequest[User, Project]{Subject: dev, Resource: proj, Action: "commit"}))
-	fmt.Printf("Dev2 commit:   %v\n", evaluator.Evaluate(auth.AccessRequest[User, Project]{Subject: outsider, Resource: proj, Action: "commit"}))
+	fmt.Printf("Dev1 commit:   %v\n", evaluator.Evaluate(baccess.AccessRequest[User, Project]{Subject: dev, Resource: proj, Action: "commit:isTeamMember"}))
+	fmt.Printf("Dev2 commit:   %v\n", evaluator.Evaluate(baccess.AccessRequest[User, Project]{Subject: outsider, Resource: proj, Action: "commit:isTeamMember"}))
 }

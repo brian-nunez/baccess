@@ -1,10 +1,10 @@
-package auth_test
+package baccess_test
 
 import (
 	"testing"
 
-	"github.com/brian-nunez/baccess/pkg/auth"
-	auth_test_utils "github.com/brian-nunez/baccess/pkg/auth/test"
+	baccess "github.com/brian-nunez/baccess/v1"
+	auth_test_utils "github.com/brian-nunez/baccess/v1/test"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,7 +13,7 @@ func TestAccessRequest(t *testing.T) {
 	resource := "testResource"
 	action := "read"
 
-	req := auth.AccessRequest[string, string]{
+	req := baccess.AccessRequest[string, string]{
 		Subject:  subject,
 		Resource: resource,
 		Action:   action,
