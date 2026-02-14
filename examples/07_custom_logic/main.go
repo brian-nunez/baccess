@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	baccess "github.com/brian-nunez/baccess/v1"
+	"github.com/brian-nunez/baccess"
 	"strings"
 )
 

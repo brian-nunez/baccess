@@ -2,10 +2,9 @@ package main
 
 import (
 	"fmt"
-	baccess "github.com/brian-nunez/baccess/v1"
+	"github.com/brian-nunez/baccess"
 )
 
-// Simple User and Resource
 type User struct {
 	Name  string
 	Roles []string

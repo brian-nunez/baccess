@@ -3,7 +3,7 @@ package baccess_test
 import (
 	"testing"
 
-	baccess "github.com/brian-nunez/baccess/v1"
+	"github.com/brian-nunez/baccess"
 	"github.com/stretchr/testify/assert"
 )
 

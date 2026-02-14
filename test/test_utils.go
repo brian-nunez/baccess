@@ -1,6 +1,6 @@
 package auth_test_utils
 
-import baccess "github.com/brian-nunez/baccess/v1"
+import "github.com/brian-nunez/baccess"
 
 var _ baccess.RoleBearer = MockRoleBearer{}
 var _ baccess.Identifiable = MockIdentifiable{}

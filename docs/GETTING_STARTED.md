@@ -7,7 +7,7 @@ This guide will walk you through the essential steps to integrate the `Baccess` 
 To get started, add `Baccess` to your project using `go get`:
 
 ```sh
-go get github.com/brian-nunez/baccess/v1
+go get github.com/brian-nunez/baccess
 ```
 
 ## 2. Core Concepts in Code
@@ -37,7 +37,7 @@ First, define the `User` and `Document` types that will be your Subject and Reso
 package main
 
 import (
-    baccess "github.com/brian-nunez/baccess/v1"
+    baccess "github.com/brian-nunez/baccess"
     "fmt"
 )
 
@@ -121,7 +121,7 @@ Now, create your users and resources and evaluate their access.
 package main
 
 import (
-	baccess "github.com/brian-nunez/baccess/v1"
+	baccess "github.com/brian-nunez/baccess"
 	"fmt"
 )
 

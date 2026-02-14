@@ -86,7 +86,7 @@ While the standard library provides many useful predicates, you will often need 
 package main
 
 import (
-    baccess "github.com/brian-nunez/baccess/v1"
+    baccess "github.com/brian-nunez/baccess"
     "time"
 )
 
