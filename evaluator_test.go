@@ -170,7 +170,7 @@ func TestEvaluator_Evaluate(t *testing.T) {
 			subject:  ownerSubject,
 			resource: doc1,
 			action:   "delete", // Policy is "delete:isOwner"
-			expected: false,
+			expected: true,
 		},
 		// Test combined policies
 		{

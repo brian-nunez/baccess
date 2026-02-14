@@ -54,6 +54,10 @@ func (e *Evaluator[S, R]) Evaluate(req AccessRequest[S, R]) bool {
 			// Rule 4: Policy for a base action matches request for the same base action with a condition
 			// (e.g., policy "read" matches request "read:something")
 			match = true
+		} else if reqActionCondition == "" && policyKeyCondition != "" && reqActionBase == policyKeyBase {
+			// Rule 5: Request for a base action matches policy for the same base action with a condition
+			// (e.g., request "delete" matches policy "delete:isOwner")
+			match = true
 		}
 
 		if match {
