@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	baccess "github.com/brian-nunez/baccess/v1"
+	"github.com/brian-nunez/baccess/v1"
 )
 
 type User struct {
@@ -32,8 +32,8 @@ type Document struct {
 	Collaborators []string
 }
 
-func loadConfgFromFile() *baccess.Config {
-	cfg, _ := baccess.LoadConfigFromFile("cmd/config.json")
+func loadConfigFromFile() *baccess.Config {
+	cfg, _ := baccess.LoadConfigFromFile("config.json")
 
 	return cfg
 }
@@ -85,7 +85,7 @@ func main() {
 		true,
 	))
 
-	cfg := loadConfgFromFile() // or loadConfig()
+	cfg := loadConfigFromFile() // or loadConfig()
 
 	evaluator, err := baccess.BuildEvaluator(cfg, rbac, registry)
 	if err != nil {
