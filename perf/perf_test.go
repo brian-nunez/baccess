@@ -3,7 +3,7 @@ package perf
 import (
 	"testing"
 
-	baccess "github.com/brian-nunez/baccess/v1"
+	"github.com/brian-nunez/baccess"
 )
 
 type MockUser struct {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/brian-nunez/baccess/v1"
+	"github.com/brian-nunez/baccess"
 )
 
 type User struct {

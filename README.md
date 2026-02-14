@@ -13,7 +13,7 @@
 ## Installation
 
 ```bash
-go get github.com/brian-nunez/baccess/v1
+go get github.com/brian-nunez/baccess
 ```
 
 ## Quick Start
@@ -40,7 +40,7 @@ package main
 
 import (
     "fmt"
-    baccess "github.com/brian-nunez/baccess/v1"
+    baccess "github.com/brian-nunez/baccess"
 )
 
 func main() {

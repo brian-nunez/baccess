@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	baccess "github.com/brian-nunez/baccess/v1"
-	auth_test_utils "github.com/brian-nunez/baccess/v1/test"
+	"github.com/brian-nunez/baccess"
+	auth_test_utils "github.com/brian-nunez/baccess/test"
 	"github.com/stretchr/testify/assert"
 )
 

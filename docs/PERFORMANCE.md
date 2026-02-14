@@ -28,7 +28,7 @@ The following benchmark results were obtained:
 goos: darwin
 
 goarch: arm64
-pkg: github.com/brian-nunez/baccess/v1/perf
+pkg: github.com/brian-nunez/baccess/perf
 cpu: Apple M3 Pro
 BenchmarkPolicyEvaluation/ReadAccess_SimpleAllow-12                                     100000000               119.2 ns/op           32 B/op             1 allocs/op
 BenchmarkPolicyEvaluation/DeleteAccess_Owner_True-12                                    100000000               94.42 ns/op            0 B/op             0 allocs/op
@@ -45,7 +45,7 @@ BenchmarkPolicyEvaluation/CommentAccess_DepartmentMember_True-12                
 BenchmarkPolicyEvaluation/CommentAccess_DepartmentMember_False-12                       100000000               97.49 ns/op            0 B/op             0 allocs/op
 BenchmarkPolicyEvaluation/AdminAccess_WildcardAction-12                                 100000000               96.63 ns/op            0 B/op             0 allocs/op
 PASS
-ok      github.com/brian-nunez/baccess/v1/perf    137.654s
+ok      github.com/brian-nunez/baccess/perf    137.654s
 ```
 
 ## 6. Analysis
